@@ -210,6 +210,32 @@ double attackMs(int mode)
 }
 
 //------------------------------------------------------------------------
+// The attack, as a TRACE rather than a single number: gain reduction per
+// sample for the first few milliseconds after a hard step.
+//
+// Same square wave as attackMs and for the same reason - a rectified sine only
+// reaches its peak a quarter cycle in, which at 220 Hz is longer than any of
+// the three attack settings, so a sine step measures the tone getting loud
+// rather than the sidechain doing anything.
+std::vector<double> attackTrace(int mode, int samples)
+{
+    Engine e(mode, false);
+    const double amp = lin(-6.0);
+    std::vector<double> gr;
+    gr.reserve(samples);
+
+    float inL, inR, outL, outR;
+    for (int i = 0; i < samples; ++i)
+    {
+        const double ph = std::fmod(1000.0 * i / kRate, 1.0);
+        inL = inR = static_cast<float>(ph < 0.5 ? amp : -amp);
+        e.eng.processStereo(&inL, &inR, &outL, &outR, 1);
+        gr.push_back(e.eng.gainReductionDb());
+    }
+    return gr;
+}
+
+//------------------------------------------------------------------------
 // THD against gain reduction. On a FET compressor the two have to move
 // together: the device setting the gain is the device making the harmonics.
 std::vector<std::pair<double, double>> thdVsReduction()
@@ -305,6 +331,20 @@ void writeJson(const char* path)
         std::fprintf(f, "    \"%s\": [", kModeName[m]);
         for (size_t i = 0; i < gr.size(); ++i)
             std::fprintf(f, "%s%.3f", i ? "," : "", gr[i]);
+        std::fprintf(f, "]%s\n", m < 2 ? "," : "");
+    }
+    std::fprintf(f, "  },\n");
+
+    // Attack traces, at SAMPLE resolution: 4 ms is long enough for the slowest
+    // of the three to arrive and short enough that the three stay separable.
+    const int atkSamples = static_cast<int>(kRate * 0.004);
+    std::fprintf(f, "  \"attack\": {\n");
+    for (int m = 0; m < 3; ++m)
+    {
+        auto tr = attackTrace(m, atkSamples);
+        std::fprintf(f, "    \"%s\": [", kModeName[m]);
+        for (size_t k = 0; k < tr.size(); ++k)
+            std::fprintf(f, "%s%.4f", k ? "," : "", tr[k]);
         std::fprintf(f, "]%s\n", m < 2 ? "," : "");
     }
     std::fprintf(f, "  },\n");
