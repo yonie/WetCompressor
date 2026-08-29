@@ -97,9 +97,14 @@ struct Engine
     Engine(int mode, bool analog)
     {
         CompEngine::Settings s;
-        s.input = 0.5;      // 0 dB
-        s.output = 0.5;     // 0 dB
-        s.mode = mode;
+        // Step INDICES, not normalised values. They were doubles once and the
+        // literal 0.5 survived the change to detents, where it truncates to
+        // step 0 - which is -30 dB in AND out, so the measurement described a
+        // compressor that never reached its own threshold: a straight 1:1
+        // line, no gain reduction, and a noise floor 30 dB too good.
+        s.input  = CompRange::kCentreStep;   // 0 dB
+        s.output = CompRange::kCentreStep;   // 0 dB
+        s.mode   = mode;
         eng.prepare(kRate, kBlock);
         eng.setSettings(s);
         eng.setSaturationEnabled(analog);
