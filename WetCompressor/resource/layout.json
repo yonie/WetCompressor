@@ -1,0 +1,113 @@
+{
+  "panel": {
+    "size": [
+      768,
+      512
+    ]
+  },
+  "knobs": {
+    "input": {
+      "origin": [
+        79,
+        305
+      ],
+      "size": [
+        147,
+        147
+      ],
+      "frames": 61,
+      "tag": "kInputParam"
+    },
+    "output": {
+      "origin": [
+        541,
+        305
+      ],
+      "size": [
+        147,
+        147
+      ],
+      "frames": 61,
+      "tag": "kOutputParam"
+    }
+  },
+  "meters": {
+    "kInputMeterL": {
+      "origin": [
+        119,
+        100
+      ],
+      "size": [
+        22,
+        179
+      ],
+      "segments": 12,
+      "inverted": false,
+      "reduction": false
+    },
+    "kInputMeterR": {
+      "origin": [
+        169,
+        100
+      ],
+      "size": [
+        22,
+        179
+      ],
+      "segments": 12,
+      "inverted": false,
+      "reduction": false
+    },
+    "kGRMeter": {
+      "origin": [
+        370,
+        110
+      ],
+      "size": [
+        28,
+        192
+      ],
+      "segments": 12,
+      "inverted": true,
+      "reduction": true
+    },
+    "kOutputMeterL": {
+      "origin": [
+        581,
+        100
+      ],
+      "size": [
+        22,
+        179
+      ],
+      "segments": 12,
+      "inverted": false,
+      "reduction": false
+    },
+    "kOutputMeterR": {
+      "origin": [
+        632,
+        100
+      ],
+      "size": [
+        22,
+        179
+      ],
+      "segments": 12,
+      "inverted": false,
+      "reduction": false
+    }
+  },
+  "mode": {
+    "origin": [
+      302,
+      364
+    ],
+    "size": [
+      165,
+      58
+    ],
+    "buttons": "-0.5,25.5,46.0,57.5;58.5,25.5,106.0,57.5;118.0,25.5,164.5,57.5",
+    "leds": "22.8,7.0,5.2;82.2,7.0,5.2;141.2,7.0,5.2"
+  }
+}
