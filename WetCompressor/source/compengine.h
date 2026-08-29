@@ -39,33 +39,44 @@ namespace Yonie {
 //------------------------------------------------------------------------
 namespace CompRange {
 
-// INPUT and OUTPUT are CONTINUOUS, unlike WetEQ's stepped knobs. The panel art
-// paints a fine 17-dot scale running -inf .. -24 .. 0 .. +24 .. +inf with the
-// spacing of an audio taper, not a row of evenly placed detents - and a
-// compressor's drive is set by ear against the meter, which is exactly the case
-// where a detent gets in the way. Same reasoning as WetEQ's nine steps, applied
-// to a different control and reaching the other answer.
-constexpr double kInputMinDb  = -24.0;
-constexpr double kInputMaxDb  =  24.0;
-constexpr double kOutputMinDb = -24.0;
-constexpr double kOutputMaxDb =  24.0;
+// INPUT and OUTPUT are STEPPED, like every other control in the line. Coarse on
+// purpose: it forces a decision instead of inviting a 0.5 dB fiddle, which is
+// the same reasoning as WetEQ's nine detents and WetDelay's six delay times.
+//
+// ELEVEN positions, EVENLY spaced, +/-30 dB in 6 dB steps. Odd, so the centre
+// detent is a real position: 0 dB at twelve o'clock, unity reachable, and boost
+// mirroring cut exactly.
+//
+// Ronald, 2026-08-29: "more like a mastering comp with like 9 or 11 settings
+// only. to force choice... as this is only a single input button, a bit more
+// fine control is ok, so 11 or 13 choices also works."
+//
+// The panel art prints an eleven-value scale of its own (-inf, -24 ... +24,
+// +inf) with the crowded spacing of an audio taper, and the first version of
+// this matched it detent for detent. That was over-fitting - Ronald, the same
+// day: "you DONT need to exactly match the UI here. its fine to just have
+// evenly spaced steps. better even. the UI is 'inspiration' but it doesnt all
+// have to be perfectly chirurical." An even 6 dB step is what a mastering
+// control does, and it means every detent is the same size in the ear as well
+// as on the panel.
+constexpr int kSteps  = 11;
+constexpr double kStepDbSize = 6.0;
+constexpr double kStepDbMin  = -30.0;
 
-// The bottom of each knob's travel is painted -inf and it means it: fully
-// counter-clockwise is off, not -24 dB.
-constexpr double kMuteBelow = 0.015;
+constexpr int kCentreStep = kSteps / 2;      // 5 -> 0 dB, twelve o'clock
+
+inline double stepDb(int step)
+{
+    if (step < 0) step = 0;
+    if (step > kSteps - 1) step = kSteps - 1;
+    return kStepDbMin + kStepDbSize * step;
+}
 
 // FAST / NORMAL / SLOW. There is no attack or release knob because the three
 // buttons pick a point in the range the hardware's two pots cover, and three
 // well-chosen points is the WET answer to a pair of continuous controls - the
 // same reasoning as WetDelay's six fixed delay times.
 enum Mode { kFast = 0, kNormal = 1, kSlow = 2, kModeCount = 3 };
-
-inline double normToDb(double t, double lo, double hi)
-{
-    if (t < 0.0) t = 0.0;
-    if (t > 1.0) t = 1.0;
-    return lo + (hi - lo) * t;
-}
 
 } // namespace CompRange
 
@@ -79,11 +90,13 @@ public:
 
     struct Settings
     {
-        // Normalised knob positions, 0..1. Continuous, so these are the host's
-        // own normalised values rather than step indices.
-        double input  = 0.5;      // centre = 0 dB
-        double output = 0.5;      // centre = 0 dB
-        int    mode   = CompRange::kNormal;
+        // Discrete knob positions, index based, because every WET control is a
+        // stepped encoder rather than a continuous pot. Derived from the step
+        // count rather than written as literals: a fresh insert has to be
+        // audibly neutral, and a literal is what lets that drift.
+        int input  = CompRange::kCentreStep;    // 0 dB
+        int output = CompRange::kCentreStep;    // 0 dB
+        int mode   = CompRange::kNormal;
 
         bool operator==(const Settings& o) const
         {
@@ -105,10 +118,8 @@ public:
     // reducing). The GR meter reads this.
     float gainReductionDb() const { return grPeakDb; }
 
-    double inputDb()  const { return CompRange::normToDb(current.input,
-                                    CompRange::kInputMinDb, CompRange::kInputMaxDb); }
-    double outputDb() const { return CompRange::normToDb(current.output,
-                                    CompRange::kOutputMinDb, CompRange::kOutputMaxDb); }
+    double inputDb()  const { return CompRange::stepDb(current.input); }
+    double outputDb() const { return CompRange::stepDb(current.output); }
 
     // The panel prints the GR scale 0 to -22.
     static constexpr float kMeterRangeDb = 22.0f;
@@ -174,8 +185,10 @@ private:
     // overshoot that lets a transient through.
     float lastGain = 1.0f;
 
-    // Continuous knobs, so a host sending a block-rate jump still needs the
-    // gain to move without stepping.
+    // The knobs are stepped, so a change is a JUMP, and a jump is a click - the
+    // gain leaps by a factor of two in one detent. What moves smoothly is the
+    // value behind the detent, over a few milliseconds: short enough that the
+    // change still feels instant, long enough that nothing steps.
     float inGain = 1.0f, inGainTarget = 1.0f;
     float outGain = 1.0f, outGainTarget = 1.0f;
     static constexpr double kGlideMs = 20.0;

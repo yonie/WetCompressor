@@ -21,34 +21,39 @@ namespace Yonie {
 namespace {
 
 //------------------------------------------------------------------------
-// A continuous dB parameter that prints what the panel prints - including the
-// -inf at the bottom of the travel, which is a real position and not a rounding
-// artefact.
+// A stepped dB parameter that prints exactly what the panel prints, including
+// the two end stops. The strings come from the same CompRange table the DSP
+// uses, so the readout and the gain can never disagree.
 //------------------------------------------------------------------------
 class GainParameter : public Vst::Parameter
 {
 public:
-    GainParameter(const Vst::TChar* title, Vst::ParamID id, double lo, double hi)
-    : lo(lo), hi(hi)
+    GainParameter(const Vst::TChar* title, Vst::ParamID id)
     {
         Vst::ParameterInfo& i = info;
         UString(i.title, str16BufferSize(Vst::String128)).assign(title);
         i.id = id;
-        i.stepCount = 0;                       // continuous
-        i.defaultNormalizedValue = 0.5;        // twelve o'clock = 0 dB
+        i.stepCount = CompRange::kSteps - 1;
+        i.defaultNormalizedValue =
+            static_cast<double>(CompRange::kCentreStep) / (CompRange::kSteps - 1);
         i.unitId = Vst::kRootUnitId;
         i.flags = Vst::ParameterInfo::kCanAutomate;
         setNormalized(i.defaultNormalizedValue);
     }
 
+    static int stepOf(Vst::ParamValue normalized)
+    {
+        int idx = static_cast<int>(normalized * (CompRange::kSteps - 1) + 0.5);
+        if (idx < 0) idx = 0;
+        if (idx > CompRange::kSteps - 1) idx = CompRange::kSteps - 1;
+        return idx;
+    }
+
     void toString(Vst::ParamValue normalized, Vst::String128 string) const SMTG_OVERRIDE
     {
         char text[64];
-        if (normalized <= CompRange::kMuteBelow)
-            std::snprintf(text, sizeof(text), "-inf dB");
-        else
-            std::snprintf(text, sizeof(text), "%+.1f dB",
-                          CompRange::normToDb(normalized, lo, hi));
+        std::snprintf(text, sizeof(text), "%+.0f dB",
+                      CompRange::stepDb(stepOf(normalized)));
         UString(string, str16BufferSize(Vst::String128)).fromAscii(text);
     }
 
@@ -60,15 +65,18 @@ public:
         double want = 0.0;
         if (!wrapper.scanFloat(want))
             return false;
-        double t = (want - lo) / (hi - lo);
-        if (t < 0.0) t = 0.0;
-        if (t > 1.0) t = 1.0;
-        normalized = t;
+
+        // Snap whatever was typed to the nearest detent.
+        int best = 0;
+        double bestErr = 1e30;
+        for (int i = 0; i < CompRange::kSteps; ++i)
+        {
+            const double err = std::abs(CompRange::stepDb(i) - want);
+            if (err < bestErr) { bestErr = err; best = i; }
+        }
+        normalized = static_cast<double>(best) / (CompRange::kSteps - 1);
         return true;
     }
-
-private:
-    double lo, hi;
 };
 
 //------------------------------------------------------------------------
@@ -110,11 +118,9 @@ tresult PLUGIN_API WetCompController::initialize(FUnknown* context)
     registerCustomViews();
 
     parameters.addParameter(new GainParameter(
-        reinterpret_cast<const Vst::TChar*>(u"Input"), kInputParam,
-        CompRange::kInputMinDb, CompRange::kInputMaxDb));
+        reinterpret_cast<const Vst::TChar*>(u"Input"), kInputParam));
     parameters.addParameter(new GainParameter(
-        reinterpret_cast<const Vst::TChar*>(u"Output"), kOutputParam,
-        CompRange::kOutputMinDb, CompRange::kOutputMaxDb));
+        reinterpret_cast<const Vst::TChar*>(u"Output"), kOutputParam));
     parameters.addParameter(new ModeParameter(
         reinterpret_cast<const Vst::TChar*>(u"Mode"), kModeParam));
 
@@ -151,17 +157,18 @@ tresult PLUGIN_API WetCompController::setComponentState(IBStream* state)
     if (!streamer.readInt32(version))
         return kResultFalse;
 
-    double d = 0.0;
     int32 v = 0;
-    if (streamer.readDouble(d)) setParamNormalized(kInputParam, d);
-    if (streamer.readDouble(d)) setParamNormalized(kOutputParam, d);
-    if (streamer.readInt32(v))
-    {
-        if (v < 0) v = 0;
-        if (v > CompRange::kModeCount - 1) v = CompRange::kModeCount - 1;
-        setParamNormalized(kModeParam,
-                           static_cast<double>(v) / (CompRange::kModeCount - 1));
-    }
+    auto restore = [&](Vst::ParamID id, int count) {
+        if (streamer.readInt32(v))
+        {
+            if (v < 0) v = 0;
+            if (v > count - 1) v = count - 1;
+            setParamNormalized(id, count > 1 ? static_cast<double>(v) / (count - 1) : 0.0);
+        }
+    };
+    restore(kInputParam,  CompRange::kSteps);
+    restore(kOutputParam, CompRange::kSteps);
+    restore(kModeParam,   CompRange::kModeCount);
 
     return kResultOk;
 }

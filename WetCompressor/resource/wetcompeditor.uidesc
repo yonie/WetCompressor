@@ -87,13 +87,14 @@
 		      reduction-scheme="false"
 		      transparent="false"/>
 
-		<!-- INPUT and OUTPUT. Continuous, 277 degrees of travel, which is
-		     what the painted tick ring spans. -->
+		<!-- INPUT and OUTPUT. Eleven detents, one frame per printed value,
+		     rendered at the measured angle of that printed value. -->
 		<view class="CompKnob"
 		      control-tag="kInputParam"
 		      origin="79, 305"
 		      size="147, 147"
 		      bitmap="knob_input"
+		      step-count="11"
 		      transparent="true"/>
 
 		<view class="CompKnob"
@@ -101,6 +102,7 @@
 		      origin="541, 305"
 		      size="147, 147"
 		      bitmap="knob_output"
+		      step-count="11"
 		      transparent="true"/>
 
 		<!-- FAST / NORMAL / SLOW. One view, explicit per-button rects, so
@@ -125,11 +127,11 @@
 		<bitmap name="backplate" path="backplate.png"/>
 		<bitmap name="knob_input" path="knob_input.png"
 		        multiframe-size="147, 147"
-		        multiframe-num-frames="61"
+		        multiframe-num-frames="11"
 		        mulitframe-frames-per-row="1"/>
 		<bitmap name="knob_output" path="knob_output.png"
 		        multiframe-size="147, 147"
-		        multiframe-num-frames="61"
+		        multiframe-num-frames="11"
 		        mulitframe-frames-per-row="1"/>
 	</bitmaps>
 </vstgui-ui-description>

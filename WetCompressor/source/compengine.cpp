@@ -141,14 +141,12 @@ void CompEngine::setSettings(const Settings& s)
 //------------------------------------------------------------------------
 void CompEngine::updateFromSettings()
 {
-    auto knobGain = [](double norm, double lo, double hi) -> float {
-        if (norm <= CompRange::kMuteBelow)
-            return 0.0f;                       // the painted -inf, and it means it
-        return static_cast<float>(std::pow(10.0, CompRange::normToDb(norm, lo, hi) / 20.0));
+    auto knobGain = [](int step) -> float {
+        return static_cast<float>(std::pow(10.0, CompRange::stepDb(step) / 20.0));
     };
 
-    inGainTarget  = knobGain(current.input,  CompRange::kInputMinDb,  CompRange::kInputMaxDb);
-    outGainTarget = knobGain(current.output, CompRange::kOutputMinDb, CompRange::kOutputMaxDb);
+    inGainTarget  = knobGain(current.input);
+    outGainTarget = knobGain(current.output);
     sidechain.setTimes(timesFor(current.mode));
 }
 

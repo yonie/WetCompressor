@@ -73,20 +73,25 @@ tresult PLUGIN_API WetCompProcessor::canProcessSampleSize(int32 symbolicSampleSi
 }
 
 //------------------------------------------------------------------------
+// Normalised parameter value -> discrete knob position.
+static int toStep(Steinberg::Vst::ParamValue normalized, int stepCount)
+{
+    if (stepCount <= 1)
+        return 0;
+    int idx = static_cast<int>(normalized * (stepCount - 1) + 0.5);
+    if (idx < 0) idx = 0;
+    if (idx > stepCount - 1) idx = stepCount - 1;
+    return idx;
+}
+
+//------------------------------------------------------------------------
 void WetCompProcessor::applyParameter(Vst::ParamID id, Vst::ParamValue value)
 {
     switch (id)
     {
-        case kInputParam:  pending.input  = value; break;
-        case kOutputParam: pending.output = value; break;
-        case kModeParam:
-        {
-            int m = static_cast<int>(value * (CompRange::kModeCount - 1) + 0.5);
-            if (m < 0) m = 0;
-            if (m > CompRange::kModeCount - 1) m = CompRange::kModeCount - 1;
-            pending.mode = m;
-            break;
-        }
+        case kInputParam:  pending.input  = toStep(value, CompRange::kSteps); break;
+        case kOutputParam: pending.output = toStep(value, CompRange::kSteps); break;
+        case kModeParam:   pending.mode   = toStep(value, CompRange::kModeCount); break;
         default: break;
     }
 }
@@ -210,14 +215,18 @@ tresult PLUGIN_API WetCompProcessor::setState(IBStream* state)
         return kResultFalse;
 
     CompEngine::Settings s;
-    double d = 0.0;
     int32 v = 0;
-    if (streamer.readDouble(d)) s.input = d;
-    if (streamer.readDouble(d)) s.output = d;
-    if (streamer.readInt32(v))  s.mode = v;
-
-    if (s.mode < 0) s.mode = 0;
-    if (s.mode > CompRange::kModeCount - 1) s.mode = CompRange::kModeCount - 1;
+    auto rd = [&](int& dst, int count) {
+        if (streamer.readInt32(v))
+        {
+            if (v < 0) v = 0;
+            if (v > count - 1) v = count - 1;
+            dst = v;
+        }
+    };
+    rd(s.input,  CompRange::kSteps);
+    rd(s.output, CompRange::kSteps);
+    rd(s.mode,   CompRange::kModeCount);
 
     pending = s;
     engine.setSettings(s);
@@ -237,8 +246,8 @@ tresult PLUGIN_API WetCompProcessor::getState(IBStream* state)
     streamer.writeInt32(1);
 
     const CompEngine::Settings& s = engine.settings();
-    streamer.writeDouble(s.input);
-    streamer.writeDouble(s.output);
+    streamer.writeInt32(s.input);
+    streamer.writeInt32(s.output);
     streamer.writeInt32(s.mode);
 
     return kResultOk;

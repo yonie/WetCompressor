@@ -15,7 +15,7 @@
         147,
         147
       ],
-      "frames": 61,
+      "frames": 11,
       "tag": "kInputParam"
     },
     "output": {
@@ -27,7 +27,7 @@
         147,
         147
       ],
-      "frames": 61,
+      "frames": 11,
       "tag": "kOutputParam"
     }
   },

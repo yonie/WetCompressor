@@ -77,6 +77,13 @@ public:
 
     VSTGUI::CView* create(const VSTGUI::UIAttributes& attributes,
                           const VSTGUI::IUIDescription* description) const override;
+    bool apply(VSTGUI::CView* view, const VSTGUI::UIAttributes& attributes,
+               const VSTGUI::IUIDescription* description) const override;
+    bool getAttributeNames(StringList& attributeNames) const override;
+    AttrType getAttributeType(const string& attributeName) const override;
+    bool getAttributeValue(VSTGUI::CView* view, const string& attributeName,
+                           string& stringValue,
+                           const VSTGUI::IUIDescription* desc) const override;
 };
 
 //------------------------------------------------------------------------

@@ -10,35 +10,44 @@
 namespace Yonie {
 
 //------------------------------------------------------------------------
-// CompKnob - a continuous filmstrip knob that drags and scrolls the way a
-// hardware pot behaves, with ends that are ends.
+// CompKnob - a stepped filmstrip knob that only rests on printed positions.
 //
-// It exists because VSTGUI's own knob has two problems here, both of which
-// Ronald hit within a minute of the first build:
+// Every WET control is a stepped encoder: coarse on purpose, so it forces a
+// decision instead of inviting a 0.5 dB fiddle. Here that means:
+//
+//   * the value always snaps to a detent, however it was changed
+//   * one mouse-wheel notch moves exactly one detent
+//   * dragging moves THROUGH the detents rather than sliding between them
+//
+// The filmstrip is authored with exactly one frame per position, so the frame
+// index equals the step index and every pointer angle is exactly right - and
+// because the panel prints eleven values around the arc, the pointer always
+// ends up on a printed number.
+//
+// It subclasses CAnimKnob rather than reusing VSTGUI's mouse handling, for two
+// reasons found in the first build:
 //
 //   1. CIRCULAR DRAG HAS A SEAM. In circular mode the value follows the angle
-//      of the pointer around the knob's centre, and the control watches for the
+//      of the pointer around the centre, and the control watches for the
 //      pointer crossing more than half the range in one move so it can decide
-//      you meant to go the other way round. At the bottom of the travel that
-//      test fires on an ordinary small movement and the knob jumps to the
-//      opposite end. There is no way to tune it out - a circular control with
-//      a 277 degree sweep has a 83 degree wedge at the bottom where "which way
-//      did they mean" has no correct answer. Dragging is vertical here, so the
-//      question never arises.
+//      you meant to go the other way round. On a 277 degree sweep that leaves
+//      an 83 degree wedge at the bottom where the question has no correct
+//      answer, and an ordinary small movement there jumps the knob to the
+//      opposite end. Dragging is vertical here, so the question never arises.
 //
-//   2. THE WHEEL WAS COARSE AND COULD LOSE ITS LAST STEP. VSTGUI's default
-//      wheel increment is a tenth of the range - ten notches from -inf to +inf
-//      on a knob whose whole job is fine level setting - and it only reports a
-//      change when the view happens to be marked dirty, which is not the same
-//      question as "did the value move". Here every notch is one filmstrip
-//      frame, and a change is reported because the value changed.
-//
-// Everything else is CAnimKnob: the filmstrip, the bitmap, the drawing.
+//   2. VSTGUI reports a change only when the VIEW happens to be marked dirty,
+//      which is a drawing question standing in for a value question. When the
+//      two disagree the host keeps the old value and the knob snaps back to it
+//      the moment anything re-syncs. Here a change is reported because the
+//      value changed.
 //------------------------------------------------------------------------
 class CompKnob : public VSTGUI::CAnimKnob
 {
 public:
     CompKnob(const VSTGUI::CRect& size);
+
+    void setStepCount(int count);
+    int getStepCount() const { return stepCount; }
 
     // overrides
     VSTGUI::CMouseEventResult onMouseDown(VSTGUI::CPoint& where,
@@ -49,22 +58,27 @@ public:
                                         const VSTGUI::CButtonState& buttons) override;
     VSTGUI::CMouseEventResult onMouseCancel() override;
     void onMouseWheelEvent(VSTGUI::MouseWheelEvent& event) override;
+    void onKeyboardEvent(VSTGUI::KeyboardEvent& event) override;
+    void setValue(float val) override;
 
     CLASS_METHODS(CompKnob, VSTGUI::CAnimKnob)
 
 private:
-    void applyNormalized(float v);
+    // Move by whole detents and report the change.
+    void nudge(int detents);
+    // Nearest detent to a normalised value, as a normalised value.
+    float snap(float normalized) const;
+    int currentStep() const;
 
-    // Pixels of vertical drag for the full sweep. 260 is about a hand's travel
-    // and matches what the shipped plugins in this line feel like.
-    static constexpr float kDragRange = 260.0f;
-    // Shift drags eight times finer, which is what a mouse-only user needs to
-    // land on a printed mark.
-    static constexpr float kFineFactor = 8.0f;
+    // Pixels of vertical drag per detent. 26 is far enough that a detent is a
+    // deliberate move and close enough that the whole range is one hand's
+    // travel: eleven positions across 260 px.
+    static constexpr float kPixelsPerStep = 26.0f;
 
+    int stepCount = 11;          // number of positions, not the number of gaps
     bool dragging = false;
     VSTGUI::CPoint startPoint;
-    float startValue = 0.0f;
+    int startStep = 0;
 };
 
 //------------------------------------------------------------------------

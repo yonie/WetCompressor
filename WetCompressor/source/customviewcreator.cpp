@@ -18,6 +18,7 @@ static const std::string kAttrInverted    = "inverted";
 static const std::string kAttrReduction   = "reduction-scheme";
 static const std::string kAttrButtons     = "button-rects";
 static const std::string kAttrLEDs        = "led-spots";
+static const std::string kAttrStepCount   = "step-count";
 
 //------------------------------------------------------------------------
 // LEDMeterViewCreator
@@ -158,9 +159,48 @@ CView* CompKnobCreator::create(const UIAttributes&, const IUIDescription*) const
     return new CompKnob(CRect(0, 0, 60, 60));
 }
 
-// No apply(): UIViewFactory walks getBaseViewName() and runs the CAnimKnob and
-// CControl creators for us, which is where the bitmap and the control tag come
-// from. There is nothing left for this one to set.
+// UIViewFactory walks getBaseViewName() and runs the CAnimKnob and CControl
+// creators for us, which is where the bitmap and the control tag come from. The
+// only thing left is how many positions the knob has.
+bool CompKnobCreator::apply(CView* view, const UIAttributes& attributes,
+                            const IUIDescription*) const
+{
+    auto* knob = dynamic_cast<CompKnob*>(view);
+    if (!knob)
+        return false;
+
+    int32_t steps = 0;
+    if (attributes.getIntegerAttribute(kAttrStepCount, steps) && steps > 1)
+        knob->setStepCount(steps);
+
+    return true;
+}
+
+bool CompKnobCreator::getAttributeNames(StringList& names) const
+{
+    names.emplace_back(kAttrStepCount);
+    return true;
+}
+
+IViewCreator::AttrType CompKnobCreator::getAttributeType(const string& name) const
+{
+    if (name == kAttrStepCount) return kIntegerType;
+    return kUnknownType;
+}
+
+bool CompKnobCreator::getAttributeValue(CView* view, const string& name,
+                                        string& value, const IUIDescription*) const
+{
+    auto* knob = dynamic_cast<CompKnob*>(view);
+    if (!knob)
+        return false;
+    if (name == kAttrStepCount)
+    {
+        value = std::to_string(knob->getStepCount());
+        return true;
+    }
+    return false;
+}
 
 //------------------------------------------------------------------------
 void registerCustomViews()
