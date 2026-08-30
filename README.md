@@ -5,7 +5,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 ![Version](https://img.shields.io/badge/version-1.0.0-orange)
 
-A FET compressor VST3 plugin modelled as the circuit rather than as a gain computer, with the feedback detector, transformers and gain-cell distortion of a 1970s rack limiter.
+A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a gain computer, with the feedback detector, transformers and gain-cell distortion of a 1960s rack limiter.
 
 ![WetCompressor Plugin Screenshot](docs/panel.png)
 
@@ -380,6 +380,13 @@ cl /EHsc /O2 /std:c++17 /I WetCompressor/source tools/comptest.cpp ^
 - Website: [https://wetvst.com](https://wetvst.com)
 - Email: contact@wetvst.com
 - GitHub: [https://github.com/yonie](https://github.com/yonie)
+
+## Trademarks
+
+All product names, trademarks and registered trademarks are property of their
+respective owners, and any reference to them here describes only the kind of
+equipment this plugin was inspired by. No manufacturer has endorsed, sponsored
+or licensed this plugin, and no third-party intellectual property is used in it.
 
 ## License
 
