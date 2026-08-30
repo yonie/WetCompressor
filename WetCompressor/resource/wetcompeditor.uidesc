@@ -94,7 +94,7 @@
 		      origin="79, 305"
 		      size="147, 147"
 		      bitmap="knob_input"
-		      step-count="11"
+		      step-count="21"
 		      transparent="true"/>
 
 		<view class="CompKnob"
@@ -102,7 +102,7 @@
 		      origin="541, 305"
 		      size="147, 147"
 		      bitmap="knob_output"
-		      step-count="11"
+		      step-count="21"
 		      transparent="true"/>
 
 		<!-- FAST / NORMAL / SLOW. One view, explicit per-button rects, so
@@ -127,11 +127,11 @@
 		<bitmap name="backplate" path="backplate.png"/>
 		<bitmap name="knob_input" path="knob_input.png"
 		        multiframe-size="147, 147"
-		        multiframe-num-frames="11"
+		        multiframe-num-frames="21"
 		        mulitframe-frames-per-row="1"/>
 		<bitmap name="knob_output" path="knob_output.png"
 		        multiframe-size="147, 147"
-		        multiframe-num-frames="11"
+		        multiframe-num-frames="21"
 		        mulitframe-frames-per-row="1"/>
 	</bitmaps>
 </vstgui-ui-description>

@@ -43,13 +43,22 @@ namespace CompRange {
 // purpose: it forces a decision instead of inviting a 0.5 dB fiddle, which is
 // the same reasoning as WetEQ's nine detents and WetDelay's six delay times.
 //
-// ELEVEN positions, EVENLY spaced, +/-30 dB in 6 dB steps. Odd, so the centre
-// detent is a real position: 0 dB at twelve o'clock, unity reachable, and boost
-// mirroring cut exactly.
+// TWENTY-ONE positions, EVENLY spaced, +/-30 dB in 3 dB steps. Odd, so the
+// centre detent is a real position: 0 dB at twelve o'clock, unity reachable,
+// and boost mirroring cut exactly.
+//
+// Was eleven at 6 dB, which is where the line's "force a decision" instinct
+// lands by default. It was wrong HERE, and the reason is worth keeping: on
+// WetEQ a detent picks a band's gain, and 3.75 dB between positions is a
+// musical decision. On this knob a detent picks how much the compressor works,
+// and 6 dB is the difference between a bit of glue and obvious pumping - the
+// setting you want is usually between two of them.
 //
 // Ronald, 2026-08-29: "more like a mastering comp with like 9 or 11 settings
-// only. to force choice... as this is only a single input button, a bit more
-// fine control is ok, so 11 or 13 choices also works."
+// only. to force choice." Then, 2026-08-30, with it on real material: "i think
+// we need a bit more steps on the knobs its now too hard to pick a setting."
+// Both are right. Coarse is the identity; coarse enough to miss the setting is
+// a defect.
 //
 // The panel art prints an eleven-value scale of its own (-inf, -24 ... +24,
 // +inf) with the crowded spacing of an audio taper, and the first version of
@@ -59,11 +68,11 @@ namespace CompRange {
 // have to be perfectly chirurical." An even 6 dB step is what a mastering
 // control does, and it means every detent is the same size in the ear as well
 // as on the panel.
-constexpr int kSteps  = 11;
-constexpr double kStepDbSize = 6.0;
+constexpr int kSteps  = 21;
+constexpr double kStepDbSize = 3.0;
 constexpr double kStepDbMin  = -30.0;
 
-constexpr int kCentreStep = kSteps / 2;      // 5 -> 0 dB, twelve o'clock
+constexpr int kCentreStep = kSteps / 2;      // 10 -> 0 dB, twelve o'clock
 
 inline double stepDb(int step)
 {
