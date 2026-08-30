@@ -1,16 +1,16 @@
 //------------------------------------------------------------------------
-// fetcore.h - the 1176's circuit, stage by stage.
+// fetcore.h - the 76-style FET limiter circuit, stage by stage.
 //
 // WHY THIS IS NOT A GAIN COMPUTER PLUS AN ENVELOPE FOLLOWER
 //
 // The textbook digital compressor is: measure the level, subtract a threshold,
 // multiply by (1 - 1/ratio), smooth with two one-poles, apply. That is a
-// description of what a compressor does to a sine wave. It is not an 1176, and
-// five things it cannot do are the five things people mean when they say a
-// track "sounds 1176'd":
+// description of what a compressor does to a sine wave. It is not the circuit,
+// and five things it cannot do are the five things people mean when they say a
+// track has been through one of these:
 //
-//   1. Be a FEEDBACK compressor. The 1176 taps its detector from the OUTPUT of
-//      the gain cell, not the input. Everything else follows from that one
+//   1. Be a FEEDBACK compressor. The original taps its detector from the OUTPUT
+//      of the gain cell, not the input. Everything else follows from that one
 //      fact: the ratio is a closed-loop ratio, so it is set by loop gain and
 //      goes soft on its own near the threshold; the knee needs no knee
 //      parameter because the loop cannot correct what it has not yet heard; and
@@ -19,9 +19,9 @@
 //
 //   2. Let the first cycle of a transient through. The detector cannot see a
 //      sample until it has already been through the gain cell, so the loop is
-//      always one sample behind the signal. That overshoot is why an 1176 keeps
-//      drums sounding hit rather than pressed, and it is not a feature that was
-//      added - it is what a feedback loop does.
+//      always one sample behind the signal. That overshoot is why the original
+//      keeps drums sounding hit rather than pressed, and it is not a feature
+//      that was added - it is what a feedback loop does.
 //
 //   3. Release in two time constants at once. The timing cap discharges through
 //      a fixed resistor AND through the detector's own impedance, which depends
@@ -36,16 +36,17 @@
 //      distorts hardest when the compressor is working least, which is
 //      backwards. The FET's noise does the same thing, for the same reason.
 //
-//   5. Be FOUR AMPLIFIERS. An 1176 is an input transformer, a FET gain cell, a
-//      single-ended class-A preamp and a push-pull output stage into an output
-//      transformer. Each is its own circuit with its own noise and its own leak
-//      into the channel beside it, and the two irons colour opposite ends of the
-//      spectrum in opposite ways. One tanh at the end of a multiply is a
-//      description of the sum, and it sounds like one device rather than four.
+//   5. Be FOUR AMPLIFIERS. The original is an input transformer, a FET gain
+//      cell, a single-ended class-A preamp and a push-pull output stage into an
+//      output transformer. Each is its own circuit with its own noise and its
+//      own leak into the channel beside it, and the two irons colour opposite
+//      ends of the spectrum in opposite ways. One tanh at the end of a multiply
+//      is a description of the sum, and it sounds like one device rather than
+//      four.
 //
-// Ronald, 2026-08-28: "all analog circuit emulation as advanced as we can. the
-// famous 1176 circuit. including similar oddness as weteq: crosstalk at each
-// stage and little noise at each stage."
+// Ronald, 2026-08-28: the analog circuit emulation should go as deep as it can,
+// with the same oddness WetEQ has - crosstalk at each stage and a little noise
+// at each stage.
 //------------------------------------------------------------------------
 #pragma once
 
@@ -82,8 +83,8 @@ private:
 //------------------------------------------------------------------------
 // The FET as a voltage-controlled resistor.
 //
-// A 2N5457 in the 1176's gain cell runs in its TRIODE region as a shunt across
-// the signal path, with a fixed series resistor above it:
+// A 2N5457 in the gain cell runs in its TRIODE region as a shunt across the
+// signal path, with a fixed series resistor above it:
 //
 //     gain = Rds / (Rds + Rseries)
 //
@@ -94,7 +95,7 @@ private:
 //
 //   * The cell BOTTOMS OUT. Rds cannot go below Rds(on), so there is a hard
 //     floor to how much reduction the circuit can produce - about -38 dB on a
-//     real 1176. Past that, driving the input harder stops buying compression
+//     real one. Past that, driving the input harder stops buying compression
 //     and starts buying distortion, which is the whole "slam it" technique.
 //
 //   * The channel is nonlinear IN THE SIGNAL. The drain voltage modulates the
@@ -103,13 +104,13 @@ private:
 //
 //   * It gets NOISIER as it works. The channel is a resistor in circuit, and a
 //     resistor being switched harder into the path brings its own thermal noise
-//     with it. An 1176 doing 15 dB audibly hisses more than one sitting idle,
-//     and that is the device, not the amplifier after it.
+//     with it. A real unit doing 15 dB audibly hisses more than one sitting
+//     idle, and that is the device, not the amplifier after it.
 //------------------------------------------------------------------------
 class FETGainCell
 {
 public:
-    // Rds(on) / Rseries. 0.0126 puts the floor at -38 dB, the 1176's own
+    // Rds(on) / Rseries. 0.0126 puts the floor at -38 dB, the original's own
     // ceiling on gain reduction.
     static constexpr float kRdsOn = 0.0126f;
 
@@ -118,8 +119,8 @@ public:
     // than being a separate drive control.
     //
     // MEASURED, not chosen by ear: comptest sweeps THD against gain reduction,
-    // and a real 1176 sits around half a percent idle and a few percent at
-    // 20 dB. The first value here was 0.30 and produced 33% at 24 dB - which is
+    // and a real unit sits around half a percent idle and a few percent at 20
+    // dB. The first value here was 0.30 and produced 33% at 24 dB - which is
     // not a compressor, it is a fuzz box. Worse, it broke the RATIO: the
     // detector is fed from the cell's output, so distortion products inflate
     // the rectified peak, the loop asks for more reduction than the signal
@@ -134,8 +135,8 @@ public:
     // modulated by the very signal passing through it and the second-order term
     // is enormous. Every FET VCA ever built fixes this the same way - a
     // resistive divider feeds HALF the drain voltage back to the gate, so the
-    // gate rides with the drain and the square-law term cancels. The 1176 does
-    // it with the pair of out-of-phase copies at the gain cell.
+    // gate rides with the drain and the square-law term cancels. The original
+    // does it with the pair of out-of-phase copies at the gain cell.
     //
     // What survives cancellation is what the box actually sounds like: a little
     // residual second, because two real resistors and a real FET are not an
@@ -146,14 +147,14 @@ public:
     //
     // The split is modelled, not measured against a unit.
     static constexpr float kResidual2 = 0.20f;   // second left after cancelling
-    static constexpr float kOdd3      = 0.60f;   // third, which the divider misses
+    static constexpr float kOdd3      = 0.60f;   // third, which it cannot touch
 
     // Q-BIAS. The gate sits at a standing negative voltage set by a trimmer, so
     // the cell is very slightly on even with no signal - that is what the
     // control is for, and it is the calibration a tech sets by ear for lowest
-    // distortion. It means an 1176 in circuit is never quite transparent: there
-    // is always a little of the FET in the path. Expressed here as a floor on
-    // the control voltage, in dB.
+    // distortion. It means one of these in circuit is never quite transparent:
+    // there is always a little of the FET in the path. Expressed here as a
+    // floor on the control voltage, in dB.
     static constexpr float kQBiasDb = 0.35f;
 
     // How much the channel's own noise rises with reduction, as a multiple of
@@ -285,9 +286,9 @@ public:
     // positive with room to spare.
     //
     // Practical effect: at 44.1 kHz the fastest attack this can do is about
-    // 0.09 ms. The 1176's own 20 us is shorter than a sample period there, so
-    // nothing real is being given up; at 96 kHz the cap stops binding and FAST
-    // gets its full speed back.
+    // 0.09 ms. The original's own 20 us is shorter than a sample period there,
+    // so nothing real is being given up; at 96 kHz the cap stops binding and
+    // FAST gets its full speed back.
     static constexpr float kMaxAttackCoeff = 0.22f;
 
 private:
@@ -321,8 +322,8 @@ private:
 // anything with a kick in it.
 //
 // It also loses the top, to leakage inductance and winding capacitance. The two
-// irons in an 1176 are not the same part and do not lose the same amount, which
-// is why the input and output stages are separate instances with separate
+// irons in the original are not the same part and do not lose the same amount,
+// which is why the input and output stages are separate instances with separate
 // corner frequencies rather than one shared class.
 //------------------------------------------------------------------------
 class Transformer
@@ -366,7 +367,7 @@ private:
 //------------------------------------------------------------------------
 // The class-A preamp: single-ended, so one device does all the work and the two
 // halves of the wave are not treated alike. That asymmetry is what puts the
-// second harmonic above the third, and it is the 1176's "thickness".
+// second harmonic above the third, and it is where the "thickness" comes from.
 //------------------------------------------------------------------------
 class ClassAStage
 {
@@ -395,7 +396,7 @@ private:
 // as full rather than as fuzzy - a chain of identical tanh stages just makes
 // more of the same harmonic.
 //
-// It does NOT have a crossover region. The 1176's output stage is push-pull
+// It does NOT have a crossover region. The original's output stage is push-pull
 // CLASS A - both devices conduct through the whole cycle, which is the point of
 // biasing it that way and the reason it can be run hard without getting ugly.
 // The first version of this modelled a class-AB handover and put a quarter of a

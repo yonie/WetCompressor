@@ -20,7 +20,7 @@ static const Steinberg::FUID kWetCompControllerUID (0x1F86D30B, 0x4A9E52C7, 0xBD
 //
 // Three controls, because the circuit has three: how hard you drive it, how
 // fast it lets go, and how much you put back. There is no threshold and no
-// ratio because an 1176 has neither.
+// ratio because the original has neither.
 //------------------------------------------------------------------------
 enum WetCompParams : Steinberg::Vst::ParamID
 {

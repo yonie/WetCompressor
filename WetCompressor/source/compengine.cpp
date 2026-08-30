@@ -17,7 +17,7 @@ CompEngine::CompEngine()
 //------------------------------------------------------------------------
 // The three buttons, as sidechain networks.
 //
-// The 1176's own ranges are 20 us to 800 us of attack and 50 ms to 1.1 s of
+// The original's own ranges are 20 us to 800 us of attack and 50 ms to 1.1 s of
 // release, both continuous. Three points across that is the WET answer: pick
 // the three that are actually different from each other and print them on the
 // panel.
@@ -170,10 +170,10 @@ void CompEngine::processStereo(const float* inL, const float* inR,
         float l = inL[i];
         float r = inR[i];
 
-        //--- stage 1: input transformer ------------------------------------
+        // --- stage 1: input transformer ------------------------------------
         //
-        // BEFORE the INPUT control, which is where an 1176 has it: the control
-        // is an attenuator sitting between the input iron and the gain cell, so
+        // BEFORE the INPUT control, which is where the original has it: it is
+        // an attenuator sitting between the input iron and the gain cell, so
         // the transformer sees the source at whatever level it arrives and its
         // saturation does not follow the knob. Putting INPUT ahead of the iron
         // - which is what this did first - makes turning up the compression
@@ -187,11 +187,11 @@ void CompEngine::processStereo(const float* inL, const float* inR,
                                     bleed * pl, hs);
         }
 
-        //--- INPUT: the attenuator into the gain cell -----------------------
+        // --- INPUT: the attenuator into the gain cell -----------------------
         l *= inGain;
         r *= inGain;
 
-        //--- stage 2: the gain cell, with the loop one sample behind --------
+        // --- stage 2: the gain cell, with the loop one sample behind --------
         //
         // lastGain was computed from the PREVIOUS sample's output. The detector
         // cannot see this sample until it has been through the cell, so the
@@ -204,11 +204,11 @@ void CompEngine::processStereo(const float* inL, const float* inR,
             r = chainR.cell.process(pr, g, bleed * pl, hs);
         }
 
-        //--- detector, tapped from the cell's output ------------------------
+        // --- detector, tapped from the cell's output ------------------------
         //
-        // Peak, not RMS: the 1176's detector is a rectifier. Linked across the
-        // pair, so a loud left channel pulls the right one down with it and the
-        // image stays put.
+        // Peak, not RMS: the original's detector is a rectifier. Linked across
+        // the pair, so a loud left channel pulls the right one down with it and
+        // the image stays put.
         {
             const float rect = std::max(std::fabs(l), std::fabs(r));
 
@@ -231,7 +231,7 @@ void CompEngine::processStereo(const float* inL, const float* inR,
                 grPeak = cv;
         }
 
-        //--- stage 3: class-A preamp, single-ended (second harmonic) --------
+        // --- stage 3: class-A preamp, single-ended (second harmonic) --------
         if (saturate)
         {
             const float pl = l, pr = r;
@@ -241,7 +241,7 @@ void CompEngine::processStereo(const float* inL, const float* inR,
                                       kPreBias, bleed * pl, hs);
         }
 
-        //--- stage 4: push-pull output amp (third) into the output iron -----
+        // --- stage 4: push-pull output amp (third) into the output iron -----
         if (saturate)
         {
             const float pl = l, pr = r;
@@ -257,12 +257,12 @@ void CompEngine::processStereo(const float* inL, const float* inR,
                                        0.0f, 0.0f);
         }
 
-        //--- the warm half of the noise ------------------------------------
+        // --- the warm half of the noise ------------------------------------
         //
-        // The four stage generators are white. Op-amp and resistor noise carries
-        // a 1/f component, so analog hiss is warmer than a dither generator's.
-        // One extra low-passed source per channel gets most of the way there for
-        // the price of one filter. Flat white noise is a tell.
+        // The four stage generators are white. Op-amp and resistor noise
+        // carries a 1/f component, so analog hiss is warmer than a dither
+        // generator's. One extra low-passed source per channel gets most of the
+        // way there for the price of one filter. Flat white noise is a tell.
         //
         // Its own generator, not a filtered copy of the signal: filtering the
         // signal would be an EQ, not a noise floor.

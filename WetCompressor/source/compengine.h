@@ -4,7 +4,8 @@
 // WetCompressor's DSP. No VST3 headers, so tools/comptest can compile and
 // measure this directly without loading a plugin host.
 //
-// Signal chain, per channel - four amplifiers, in the order an 1176 has them:
+// Signal chain, per channel - four amplifiers, in the order the original has
+// them:
 //
 //   in -> INPUT (drive) -> input transformer -> FET gain cell
 //      -> class-A preamp -> push-pull output stage + output transformer
@@ -14,17 +15,17 @@
 // cell, and each of the four stages contributing its own noise and its own leak
 // into the channel beside it.
 //
-// Nothing is resampled, quantised or band-limited. Same call as WetEQ: an 1176
-// is transformers, a FET and two amplifiers - it has no sample rate and no word
-// length, so modelling one with sampler artefacts puts a digital fingerprint on
-// a device that never had one. The lo-fi core is authentic on WetDelay and
-// WetReverb, which model DIGITAL units. It is not authentic here.
+// Nothing is resampled, quantised or band-limited. Same call as WetEQ: the
+// original is transformers, a FET and two amplifiers - no sample rate and no
+// word length, so modelling one with sampler artefacts puts a digital
+// fingerprint on a device that never had one. The lo-fi core is authentic on
+// WetDelay and WetReverb, which model DIGITAL units. It is not authentic here.
 //
-// INPUT is not a trim and OUTPUT is not a level: on an 1176 the threshold is a
-// fixed property of the circuit and INPUT is how far you drive the signal past
-// it. More INPUT is more compression, and OUTPUT puts back what that cost. That
-// is why there is no threshold knob and no ratio knob - the panel has exactly
-// the controls the circuit has.
+// INPUT is not a trim and OUTPUT is not a level: on the original the threshold
+// is a fixed property of the circuit and INPUT is how far you drive the signal
+// past it. More INPUT is more compression, and OUTPUT puts back what that cost.
+// That is why there is no threshold knob and no ratio knob - the panel has
+// exactly the controls the circuit has.
 //------------------------------------------------------------------------
 
 #pragma once
@@ -133,10 +134,10 @@ public:
     // The panel prints the GR scale 0 to -22.
     static constexpr float kMeterRangeDb = 22.0f;
 
-    // The threshold is a CONSTANT, because on an 1176 it is: the detector fires
-    // where the circuit's fixed bias says it does, and the only way past it is
-    // to drive the input harder. -20 dBFS puts a normally levelled track just
-    // touching it with INPUT at twelve o'clock.
+    // The threshold is a CONSTANT, because on the original it is: the detector
+    // fires where the circuit's fixed bias says it does, and the only way past
+    // it is to drive the input harder. -20 dBFS puts a normally levelled track
+    // just touching it with INPUT at twelve o'clock.
     static constexpr float kThresholdDb = -20.0f;
 
     // Closed-loop ratio, fixed at 4:1 - the ratio the panel does not offer,
@@ -162,7 +163,7 @@ private:
     Settings current;
     double hostRate = 44100.0;
 
-    //--- the four stages, per channel ---------------------------------------
+    // --- the four stages, per channel ---------------------------------------
     //
     // Named rather than held in an array, because unlike WetEQ's six identical
     // filter stages these are four DIFFERENT circuits and the detector taps
@@ -183,10 +184,10 @@ private:
     };
     Chain chainL, chainR;
 
-    // ONE sidechain for both channels. A pair of 1176s doing stereo is strapped
-    // together for exactly this reason: two independent detectors move the
-    // image every time one channel is louder. The detector sees the louder of
-    // the two and both cells follow it.
+    // ONE sidechain for both channels. A pair of these units doing stereo is
+    // strapped together for exactly this reason: two independent detectors move
+    // the image every time one channel is louder. The detector sees the louder
+    // of the two and both cells follow it.
     Sidechain sidechain;
 
     // The loop is always one sample behind the signal, because the detector is
@@ -234,7 +235,7 @@ private:
     // anything at all.
     static constexpr float  kTiltHiss  = 2.6e-4f;
 
-    //--- stage constants ----------------------------------------------------
+    // --- stage constants ----------------------------------------------------
     //
     // Input iron: saturates in the bottom two octaves, loses a little at the
     // very top. Output iron is bigger and looser - it holds the low end better
@@ -255,7 +256,8 @@ private:
     // Push-pull output. Runs out well before a converter does, which is why the
     // unit is a colour box as well as a compressor.
     static constexpr float kOutHeadroom = 1.35f;
-    // Device mismatch in the output pair, not a crossover: the stage is class A.
+    // Device mismatch in the output pair, not a crossover: the stage is class
+    // A.
     static constexpr float kCrossover   = 0.012f;
 };
 
