@@ -126,6 +126,36 @@ public:
     // needs, and a 4:1 unit measured 14:1 at the top of its range.
     static constexpr float kChannelMod = 0.055f;
 
+    // GATE LINEARISATION - the part of the gain cell that is easiest to leave
+    // out and hardest to hear the absence of.
+    //
+    // A bare FET across the signal path is a bad distorter: its channel
+    // conductance depends on Vgs, the drain is swinging, so the channel is
+    // modulated by the very signal passing through it and the second-order term
+    // is enormous. Every FET VCA ever built fixes this the same way - a
+    // resistive divider feeds HALF the drain voltage back to the gate, so the
+    // gate rides with the drain and the square-law term cancels. The 1176 does
+    // it with the pair of out-of-phase copies at the gain cell.
+    //
+    // What survives cancellation is what the box actually sounds like: a little
+    // residual second, because two real resistors and a real FET are not an
+    // ideal square law, and a THIRD-order term that the divider does not touch.
+    // Modelling the cell without the divider makes it far too second-heavy -
+    // and since the class-A preamp downstream is already a second-harmonic
+    // generator, all the colour ends up on one harmonic.
+    //
+    // The split is modelled, not measured against a unit.
+    static constexpr float kResidual2 = 0.20f;   // second left after cancelling
+    static constexpr float kOdd3      = 0.60f;   // third, which the divider misses
+
+    // Q-BIAS. The gate sits at a standing negative voltage set by a trimmer, so
+    // the cell is very slightly on even with no signal - that is what the
+    // control is for, and it is the calibration a tech sets by ear for lowest
+    // distortion. It means an 1176 in circuit is never quite transparent: there
+    // is always a little of the FET in the path. Expressed here as a floor on
+    // the control voltage, in dB.
+    static constexpr float kQBiasDb = 0.35f;
+
     // How much the channel's own noise rises with reduction, as a multiple of
     // the stage's resting floor at the bottom of the cell's range.
     static constexpr float kNoiseRise = 3.0f;
@@ -158,13 +188,11 @@ public:
     {
         x += bleed;
 
-        const float work = 1.0f - g;
+        // Q-bias keeps a little of the FET in circuit at rest, so "no gain
+        // reduction" is not the same as "no gain cell".
+        const float work = std::min(1.0f, (1.0f - g) + kQBiasFloor);
         const float mod = kChannelMod * work;
 
-        // Asymmetric on purpose: the channel opens on one half of the cycle and
-        // closes on the other. That is a second-harmonic generator, and second
-        // is what an 1176 makes.
-        //
         // The signal term is SOFT-BOUNDED before it modulates the channel. A
         // real FET's channel responds to the drain voltage relative to its
         // pinch-off voltage, and past that it simply stops responding further -
@@ -173,11 +201,21 @@ public:
         // it turned the waveform inside out.
         const float ax = x < 0.0f ? -x : x;
         const float xs = x / (1.0f + ax);              // (-1, 1)
-        const float local = 1.0f / (1.0f + mod * xs);
+
+        // What the gate actually sees, after the drain-to-gate divider has
+        // cancelled most of the square-law term. Second survives at a fifth of
+        // its raw size; third is untouched by the divider and becomes the
+        // larger of the two once the cell is working hard.
+        const float e = kResidual2 * xs + kOdd3 * xs * xs * xs;
+        const float local = 1.0f / (1.0f + mod * e);
 
         const float y = x * g * local;
         return y + noise.next() * hissAmp * (1.0f + kNoiseRise * work);
     }
+
+    // kQBiasDb as a fraction of the cell's travel, so `work` can use it
+    // directly. 10^(-0.35/20) is the gain the standing bias alone produces.
+    static constexpr float kQBiasFloor = 0.0395f;   // 1 - 10^(-0.35/20)
 
     void setNoiseSeed(uint32_t s) { noise.seed(s); }
     void reset() {}
@@ -357,9 +395,17 @@ private:
 // as full rather than as fuzzy - a chain of identical tanh stages just makes
 // more of the same harmonic.
 //
-// It also carries the crossover: the two halves hand over near zero, and no
-// real pair hands over perfectly. A trace of that is what stops the stage from
-// being an ideal symmetric limiter.
+// It does NOT have a crossover region. The 1176's output stage is push-pull
+// CLASS A - both devices conduct through the whole cycle, which is the point of
+// biasing it that way and the reason it can be run hard without getting ugly.
+// The first version of this modelled a class-AB handover and put a quarter of a
+// percent of third harmonic into the signal at REST, at low level, where a real
+// unit is at its cleanest. Crossover distortion is also the one kind of
+// distortion nobody wants, so inventing it is worse than leaving it out.
+//
+// What is left is device mismatch: two transistors are never identical, so the
+// two halves of the wave are not treated to exactly the same curve. That is a
+// trace, not a feature.
 //------------------------------------------------------------------------
 class PushPullStage
 {
@@ -374,15 +420,11 @@ public:
         const float k = x / headroom;
         // Symmetric compression: odd harmonics only.
         float y = std::tanh(k);
-        // Class-AB handover. A small dead-band softened by the bias current,
-        // which shows on quiet signal and vanishes on loud - which is the right
-        // way round, and the reason it is not simply audible as distortion.
+        // Device mismatch: the two halves see very slightly different curves.
+        // Scales WITH level, unlike a crossover, because it is a difference in
+        // how hard each device is driven rather than a dead-band at zero.
         if (crossover > 0.0f)
-        {
-            const float a = std::fabs(k);
-            const float shape = a / (a + crossover);
-            y *= (1.0f - crossover) + crossover * shape;
-        }
+            y += crossover * k * k * (k > 0.0f ? 1.0f : -1.0f) * 0.5f;
         return y * headroom + noise.next() * hissAmp;
     }
 

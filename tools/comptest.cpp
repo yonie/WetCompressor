@@ -238,9 +238,11 @@ std::vector<double> attackTrace(int mode, int samples)
 //------------------------------------------------------------------------
 // THD against gain reduction. On a FET compressor the two have to move
 // together: the device setting the gain is the device making the harmonics.
-std::vector<std::pair<double, double>> thdVsReduction()
+struct ThdPoint { double gr, thd, h2, h3; };
+
+std::vector<ThdPoint> thdVsReduction()
 {
-    std::vector<std::pair<double, double>> pts;
+    std::vector<ThdPoint> pts;
     for (double inDb = -24.0; inDb <= 6.001; inDb += 2.0)
     {
         Engine e(CompRange::kNormal, true);
@@ -251,14 +253,17 @@ std::vector<std::pair<double, double>> thdVsReduction()
             return static_cast<float>(amp * std::sin(2.0 * kPI * 220.0 * i / kRate));
         });
         const double f = magnitudeAt(y, 220.0, settle);
-        double harm = 0.0;
+        double harm = 0.0, m2 = 0.0, m3 = 0.0;
         for (int h = 2; h <= 8; ++h)
         {
             const double m = magnitudeAt(y, 220.0 * h, settle);
             harm += m * m;
+            if (h == 2) m2 = m;
+            if (h == 3) m3 = m;
         }
-        const double thd = f > 1e-9 ? std::sqrt(harm) / f : 0.0;
-        pts.emplace_back(e.eng.gainReductionDb(), 100.0 * thd);
+        const double inv = f > 1e-9 ? 100.0 / f : 0.0;
+        pts.push_back({ e.eng.gainReductionDb(), std::sqrt(harm) * inv,
+                        m2 * inv, m3 * inv });
     }
     return pts;
 }
@@ -363,7 +368,8 @@ void writeJson(const char* path)
     auto thd = thdVsReduction();
     std::fprintf(f, "  \"thd\": [");
     for (size_t i = 0; i < thd.size(); ++i)
-        std::fprintf(f, "%s[%.2f,%.4f]", i ? "," : "", thd[i].first, thd[i].second);
+        std::fprintf(f, "%s[%.2f,%.4f,%.4f,%.4f]", i ? "," : "",
+                     thd[i].gr, thd[i].thd, thd[i].h2, thd[i].h3);
     std::fprintf(f, "],\n");
 
     std::fprintf(f, "  \"noise_db\": %.1f,\n", noiseFloorDb());
@@ -449,9 +455,9 @@ int main(int argc, char** argv)
 
     //--- the analog stages ------------------------------------------------
     std::printf("\nDistortion against gain reduction (220 Hz, analog stages in)\n");
-    std::printf("   reduction dB    THD %%\n");
+    std::printf("   reduction dB    THD %%     2nd %%     3rd %%\n");
     for (auto& p : thdVsReduction())
-        std::printf("   %10.2f    %6.3f\n", p.first, p.second);
+        std::printf("   %10.2f    %6.3f    %6.3f    %6.3f\n", p.gr, p.thd, p.h2, p.h3);
 
     std::printf("\nNoise floor      %6.1f dBFS  (four stages per channel, uncorrelated)\n",
                 noiseFloorDb());

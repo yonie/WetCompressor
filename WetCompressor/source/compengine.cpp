@@ -167,10 +167,18 @@ void CompEngine::processStereo(const float* inL, const float* inR,
         inGain  += (inGainTarget  - inGain)  * glideCoeff;
         outGain += (outGainTarget - outGain) * glideCoeff;
 
-        float l = inL[i] * inGain;
-        float r = inR[i] * inGain;
+        float l = inL[i];
+        float r = inR[i];
 
         //--- stage 1: input transformer ------------------------------------
+        //
+        // BEFORE the INPUT control, which is where an 1176 has it: the control
+        // is an attenuator sitting between the input iron and the gain cell, so
+        // the transformer sees the source at whatever level it arrives and its
+        // saturation does not follow the knob. Putting INPUT ahead of the iron
+        // - which is what this did first - makes turning up the compression
+        // also turn up the transformer, and the two colours stop being
+        // separable.
         {
             const float pl = l, pr = r;
             l = chainL.iron.process(pl, kInIronDrive * static_cast<float>(tolL[0]),
@@ -178,6 +186,10 @@ void CompEngine::processStereo(const float* inL, const float* inR,
             r = chainR.iron.process(pr, kInIronDrive * static_cast<float>(tolR[0]),
                                     bleed * pl, hs);
         }
+
+        //--- INPUT: the attenuator into the gain cell -----------------------
+        l *= inGain;
+        r *= inGain;
 
         //--- stage 2: the gain cell, with the loop one sample behind --------
         //

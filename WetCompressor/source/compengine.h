@@ -246,7 +246,8 @@ private:
     // Push-pull output. Runs out well before a converter does, which is why the
     // unit is a colour box as well as a compressor.
     static constexpr float kOutHeadroom = 1.35f;
-    static constexpr float kCrossover   = 0.045f;
+    // Device mismatch in the output pair, not a crossover: the stage is class A.
+    static constexpr float kCrossover   = 0.012f;
 };
 
 //------------------------------------------------------------------------
