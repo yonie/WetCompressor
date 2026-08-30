@@ -41,6 +41,8 @@
 		      horizontal="false"
 		      inverted="false"
 		      reduction-scheme="false"
+		      db-min="-48"
+		      db-max="18"
 		      transparent="false"/>
 
 		<view class="LEDMeterView"
@@ -52,6 +54,8 @@
 		      horizontal="false"
 		      inverted="false"
 		      reduction-scheme="false"
+		      db-min="-48"
+		      db-max="18"
 		      transparent="false"/>
 
 		<view class="LEDMeterView"
@@ -74,6 +78,8 @@
 		      horizontal="false"
 		      inverted="false"
 		      reduction-scheme="false"
+		      db-min="-48"
+		      db-max="18"
 		      transparent="false"/>
 
 		<view class="LEDMeterView"
@@ -85,6 +91,8 @@
 		      horizontal="false"
 		      inverted="false"
 		      reduction-scheme="false"
+		      db-min="-48"
+		      db-max="18"
 		      transparent="false"/>
 
 		<!-- INPUT and OUTPUT. Eleven detents, one frame per printed value,

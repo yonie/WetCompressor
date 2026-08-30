@@ -43,7 +43,9 @@
       ],
       "segments": 12,
       "inverted": false,
-      "reduction": false
+      "reduction": false,
+      "db_min": -48.0,
+      "db_max": 18.0
     },
     "kInputMeterR": {
       "origin": [
@@ -56,7 +58,9 @@
       ],
       "segments": 12,
       "inverted": false,
-      "reduction": false
+      "reduction": false,
+      "db_min": -48.0,
+      "db_max": 18.0
     },
     "kGRMeter": {
       "origin": [
@@ -69,7 +73,9 @@
       ],
       "segments": 12,
       "inverted": true,
-      "reduction": true
+      "reduction": true,
+      "db_min": null,
+      "db_max": null
     },
     "kOutputMeterL": {
       "origin": [
@@ -82,7 +88,9 @@
       ],
       "segments": 12,
       "inverted": false,
-      "reduction": false
+      "reduction": false,
+      "db_min": -48.0,
+      "db_max": 18.0
     },
     "kOutputMeterR": {
       "origin": [
@@ -95,7 +103,9 @@
       ],
       "segments": 12,
       "inverted": false,
-      "reduction": false
+      "reduction": false,
+      "db_min": -48.0,
+      "db_max": 18.0
     }
   },
   "mode": {

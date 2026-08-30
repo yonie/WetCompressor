@@ -40,6 +40,25 @@ public:
     // worse than 3, it is just more.
     void setReductionScheme(bool on) { reduction = on; }
     bool isReductionScheme() const { return reduction; }
+
+    // Map the incoming value as dB against the scale PRINTED BESIDE THE METER,
+    // rather than linearly across the segments.
+    //
+    // Linear is what this did, and it disagrees with its own panel: the art
+    // prints +18 at the top and -48 at the bottom, but a linear map puts half
+    // scale - which is -6 dBFS - at the middle segment, so a healthy signal lit
+    // three LEDs and read as nearly silent. A meter that does not agree with
+    // the numbers next to it is worse than no meter.
+    //
+    // Off by default, so a meter with no printed scale keeps the old
+    // behaviour and nothing already shipped moves.
+    void setDbRange(double lo, double hi) { dbLo = lo; dbHi = hi; dbScale = hi > lo; }
+    bool hasDbRange() const { return dbScale; }
+    double dbMin() const { return dbLo; }
+    double dbMax() const { return dbHi; }
+
+    // Number of segments lit for the current value.
+    int litSegments() const;
     
     // Custom view class name for VSTGUI factory
     CLASS_METHODS(LEDMeterView, CControl)
@@ -54,6 +73,8 @@ protected:
     bool isHorizontal = true;
     bool inverted = false;
     bool reduction = false;
+    bool dbScale = false;
+    double dbLo = -48.0, dbHi = 18.0;
 
     // The GR strip's amber. Warmer than the level meters' yellow, so the two
     // do not read as the same lamp doing two jobs.

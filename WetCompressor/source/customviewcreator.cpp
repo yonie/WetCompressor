@@ -19,6 +19,8 @@ static const std::string kAttrReduction   = "reduction-scheme";
 static const std::string kAttrButtons     = "button-rects";
 static const std::string kAttrLEDs        = "led-spots";
 static const std::string kAttrStepCount   = "step-count";
+static const std::string kAttrDbMin       = "db-min";
+static const std::string kAttrDbMax       = "db-max";
 
 //------------------------------------------------------------------------
 // LEDMeterViewCreator
@@ -56,6 +58,11 @@ bool LEDMeterViewCreator::apply(CView* view, const UIAttributes& attributes,
     if (attributes.getBooleanAttribute(kAttrReduction, boolValue))
         meter->setReductionScheme(boolValue);
 
+    double lo = 0.0, hi = 0.0;
+    if (attributes.getDoubleAttribute(kAttrDbMin, lo) &&
+        attributes.getDoubleAttribute(kAttrDbMax, hi))
+        meter->setDbRange(lo, hi);
+
     return true;
 }
 
@@ -66,6 +73,8 @@ bool LEDMeterViewCreator::getAttributeNames(StringList& names) const
     names.emplace_back(kAttrHorizontal);
     names.emplace_back(kAttrInverted);
     names.emplace_back(kAttrReduction);
+    names.emplace_back(kAttrDbMin);
+    names.emplace_back(kAttrDbMax);
     return true;
 }
 
@@ -76,6 +85,8 @@ IViewCreator::AttrType LEDMeterViewCreator::getAttributeType(const string& name)
     if (name == kAttrHorizontal)  return kBooleanType;
     if (name == kAttrInverted)    return kBooleanType;
     if (name == kAttrReduction)   return kBooleanType;
+    if (name == kAttrDbMin)       return kFloatType;
+    if (name == kAttrDbMax)       return kFloatType;
     return kUnknownType;
 }
 
@@ -90,6 +101,8 @@ bool LEDMeterViewCreator::getAttributeValue(CView* view, const string& name,
     if (name == kAttrHorizontal)  { value = "false"; return true; }
     if (name == kAttrInverted)    { value = meter->isInverted() ? "true" : "false"; return true; }
     if (name == kAttrReduction)   { value = meter->isReductionScheme() ? "true" : "false"; return true; }
+    if (name == kAttrDbMin)       { value = std::to_string(meter->dbMin()); return true; }
+    if (name == kAttrDbMax)       { value = std::to_string(meter->dbMax()); return true; }
     return false;
 }
 
