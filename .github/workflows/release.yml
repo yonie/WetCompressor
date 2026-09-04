@@ -196,7 +196,7 @@ jobs:
 
             What changed since 1.0.0:
 
-            - Power user mode: hold **Shift** while dragging, scrolling or using the arrow keys for 3x the resolution - 1 dB instead of 3 dB.
+            - Power user mode: hold **Shift** while dragging, scrolling or using the arrow keys for 3x the resolution - 1 dB instead of 3 dB - for more fine grained control of the input and output gain.
             - Slightly lower self-noise: the floor is 10 dB further down.
 
             A FET compressor modelled as the circuit. Two stepped knobs and three buttons, because that is what the circuit has: no threshold control and no ratio control, because the threshold is fixed and INPUT is how far you drive the signal past it.
