@@ -11,6 +11,22 @@ using namespace VSTGUI;
 
 namespace Yonie {
 
+namespace {
+
+// Shift. VSTGUI already calls this the zoom modifier and uses it to slow a
+// drag, so reusing it means one key does one thing: finer.
+inline bool isFine(const CButtonState& buttons)
+{
+    return (buttons & CControl::kZoomModifier) != 0;
+}
+
+inline bool isFine(const Modifiers& modifiers)
+{
+    return modifiers.has(ModifierKey::Shift);
+}
+
+} // namespace
+
 //------------------------------------------------------------------------
 CompKnob::CompKnob(const CRect& size)
 : CAnimKnob(size, nullptr, -1, nullptr)
@@ -25,13 +41,34 @@ void CompKnob::setStepCount(int count)
 }
 
 //------------------------------------------------------------------------
-float CompKnob::snap(float normalized) const
+void CompKnob::setCoarseStep(int count)
+{
+    coarseStep = count > 1 ? count : 1;
+}
+
+//------------------------------------------------------------------------
+// Nearest index on the grid currently in force. coarseStep divides the number
+// of gaps exactly, so both ends of the travel are on the coarse grid too.
+int CompKnob::snapIndex(int index, bool fine) const
+{
+    const int gaps = stepCount - 1;
+    const int unit = fine ? 1 : coarseStep;
+    int snapped = ((index + unit / 2) / unit) * unit;
+    if (index < 0) snapped = 0;
+    if (snapped < 0) snapped = 0;
+    if (snapped > gaps) snapped = gaps;
+    return snapped;
+}
+
+//------------------------------------------------------------------------
+float CompKnob::snap(float normalized, bool fine) const
 {
     if (stepCount <= 1)
         return 0.0f;
     if (normalized < 0.0f) normalized = 0.0f;
     if (normalized > 1.0f) normalized = 1.0f;
-    const int idx = static_cast<int>(normalized * (stepCount - 1) + 0.5f);
+    const int idx = snapIndex(
+        static_cast<int>(normalized * (stepCount - 1) + 0.5f), fine);
     return static_cast<float>(idx) / (stepCount - 1);
 }
 
@@ -53,18 +90,27 @@ void CompKnob::setValue(float val)
 {
     const float range = getMax() - getMin();
     const float norm = range != 0.0f ? (val - getMin()) / range : 0.0f;
-    CAnimKnob::setValue(getMin() + snap(norm) * range);
+    // Always the FINE grid here, never the coarse one. This is the path the
+    // host and an automation lane write in through, and quantising someone
+    // else's value to our coarse grid would throw away a fine setting the
+    // moment anything touched the knob. The coarse feel belongs to the input
+    // handlers below, not to the value.
+    CAnimKnob::setValue(getMin() + snap(norm, true) * range);
 }
 
 //------------------------------------------------------------------------
 // Move by whole detents. The change is reported because the VALUE changed, not
 // because the view happens to be marked dirty.
-void CompKnob::nudge(int detents)
+void CompKnob::nudge(int detents, bool fine)
 {
     if (detents == 0 || stepCount <= 1)
         return;
 
-    int idx = currentStep() + detents;
+    // Snap to the active grid FIRST, so a knob left between coarse detents by
+    // a Shift move steps onto the grid rather than carrying the offset with it
+    // for ever.
+    const int unit = fine ? 1 : coarseStep;
+    int idx = snapIndex(snapIndex(currentStep(), fine) + detents * unit, fine);
     if (idx < 0) idx = 0;
     if (idx > stepCount - 1) idx = stepCount - 1;
 
@@ -97,6 +143,7 @@ CMouseEventResult CompKnob::onMouseDown(CPoint& where, const CButtonState& butto
     }
 
     dragging = true;
+    dragFine = isFine(buttons);
     startPoint = where;
     startStep = currentStep();
     beginEdit();
@@ -109,15 +156,31 @@ CMouseEventResult CompKnob::onMouseMoved(CPoint& where, const CButtonState& butt
     if (!dragging || !buttons.isLeftButton())
         return kMouseEventNotHandled;
 
+    // Pressing or releasing Shift part way through re-bases the gesture on the
+    // spot: the drag counts detents from where it started, and a detent just
+    // changed size, so keeping the old origin would jump the knob.
+    const bool fine = isFine(buttons);
+    if (fine != dragFine)
+    {
+        dragFine = fine;
+        startPoint = where;
+        startStep = currentStep();
+    }
+
     // Vertical, with horizontal counting the same way so a diagonal drag does
     // something sensible rather than nothing. Measured from where the drag
     // STARTED, not from the last position, so the knob cannot walk away from
     // the pointer over a long gesture.
+    //
+    // The pixels per notch do not change with the modifier; what a notch MEANS
+    // does. Shift therefore moves the knob a third as far for the same hand
+    // travel, which is what a fine mode should feel like.
     const double dy = startPoint.y - where.y;
     const double dx = where.x - startPoint.x;
     const int detents = static_cast<int>(std::lround((dy + dx) / kPixelsPerStep));
 
-    int idx = startStep + detents;
+    const int unit = fine ? 1 : coarseStep;
+    int idx = snapIndex(startStep + detents * unit, fine);
     if (idx < 0) idx = 0;
     if (idx > stepCount - 1) idx = stepCount - 1;
 
@@ -167,7 +230,7 @@ void CompKnob::onMouseWheelEvent(MouseWheelEvent& event)
     if (detents != 0)
     {
         beginEdit();
-        nudge(detents);
+        nudge(detents, isFine(event.modifiers));
         endEdit();
     }
     event.consumed = true;
@@ -190,7 +253,7 @@ void CompKnob::onKeyboardEvent(KeyboardEvent& event)
     }
 
     beginEdit();
-    nudge(detents);
+    nudge(detents, isFine(event.modifiers));
     endEdit();
     event.consumed = true;
 }

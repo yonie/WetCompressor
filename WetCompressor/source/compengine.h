@@ -69,11 +69,24 @@ namespace CompRange {
 // have to be perfectly chirurical." An even 6 dB step is what a mastering
 // control does, and it means every detent is the same size in the ear as well
 // as on the panel.
-constexpr int kSteps  = 21;
-constexpr double kStepDbSize = 3.0;
+// SIXTY-ONE positions, but you only land on twenty-one of them unless you hold
+// Shift. The detents are exactly where they were - 3 dB apart across plus and
+// minus 30 - and Shift is the power-user door out of them, down to 1 dB. Same
+// gesture as WetEQ.
+//
+// 61 = 3*20+1, so the old grid is a subset: every saved v1.0.0 position lands
+// on a multiple of kCoarseStep, and the centre detent is still a real position
+// at 0 dB, twelve o'clock. Sixty-odd steps is where a stepped knob stops
+// feeling stepped - the same count WetEQ landed on, chosen the same way.
+constexpr int kSteps  = 61;
+constexpr double kStepDbSize = 1.0;          // one FINE step
 constexpr double kStepDbMin  = -30.0;
 
-constexpr int kCentreStep = kSteps / 2;      // 10 -> 0 dB, twelve o'clock
+// Detents reachable WITHOUT a modifier: every third position, 3 dB apart. The
+// UI reads this; the DSP does not care.
+constexpr int kCoarseStep = 3;
+
+constexpr int kCentreStep = kSteps / 2;      // 30 -> 0 dB, twelve o'clock
 
 inline double stepDb(int step)
 {
@@ -87,6 +100,29 @@ inline double stepDb(int step)
 // well-chosen points is the WET answer to a pair of continuous controls - the
 // same reasoning as WetDelay's six fixed delay times.
 enum Mode { kFast = 0, kNormal = 1, kSlow = 2, kModeCount = 3 };
+
+
+// Saved state carries step INDICES, so changing kSteps moves every stored
+// session unless the grid it was written on is known. WetEQ shipped that bug
+// for real - v1.1.0 read v1.0.0's indices raw and moved every control on the
+// panel - and this is the same shape of change, so the same guard goes in
+// first. From state version 2 the stream writes the step count and the reader
+// rescales.
+//
+// Version 1 here is unambiguous, unlike WetEQ's: exactly one release wrote it,
+// and it had twenty-one positions.
+constexpr int kLegacySteps21 = 21;
+
+// Move an index from the grid it was saved on to the current one. 61 = 3*20+1,
+// so every v1.0.0 position lands exactly.
+inline int rescaleStep(int index, int fromSteps)
+{
+    if (fromSteps <= 1) return 0;
+    if (index < 0) index = 0;
+    if (index > fromSteps - 1) index = fromSteps - 1;
+    if (fromSteps == kSteps) return index;
+    return (index * (kSteps - 1)) / (fromSteps - 1);
+}
 
 } // namespace CompRange
 
@@ -228,12 +264,28 @@ private:
     // stages before it - which is what happens in a chassis where the two
     // channels run the length of the board side by side.
     static constexpr float kStageBleed = 0.0026f;   // 4 stages -> about -40 dB
-    static constexpr float kStageHiss  = 3.5e-5f;   // 4 uncorrelated -> -88 dBFS
+    // Both hiss sources are 10 dB below what 1.0.0 shipped. Measured in Reaper,
+    // 1.0.0 put about -60 dB of self-noise into the mix against WetEQ's -71 on
+    // the same meter, and stacked across a few instances that is audible.
+    //
+    // The at-rest floor this leaves (-93.7 dBFS) is LOWER than WetEQ's -87.6,
+    // and that is deliberate rather than an overshoot: OUTPUT is makeup gain
+    // AFTER the noisy stages, so it lifts the floor dB for dB, and INPUT drives
+    // the cell so kNoiseRise lifts it again. An 1176 has to start quieter than
+    // a passive EQ to arrive at the same place on a working setting.
+    //
+    // The header used to claim -88 dBFS while comptest measured -83.6, because
+    // the tilted source sits on top of the four flat ones and nothing had ever
+    // reconciled the two. Scaling both by 0.315 keeps their balance, so the
+    // noise is still warm rather than white - quieter, not cleaner. kNoiseRise
+    // is untouched: the floor lifting as the FET works is modelled behaviour,
+    // and it now lifts from 10 dB further down.
+    static constexpr float kStageHiss  = 1.1e-5f;   // 4 uncorrelated
     static constexpr double kHissTiltHz = 1800.0;   // corner of the warm half
     // A one-pole at 1.8 kHz throws away most of white noise's power, so the
     // tilted source has to be driven harder than the flat ones to contribute
     // anything at all.
-    static constexpr float  kTiltHiss  = 2.6e-4f;
+    static constexpr float  kTiltHiss  = 8.2e-5f;
 
     // --- stage constants ----------------------------------------------------
     //

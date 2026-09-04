@@ -13,7 +13,7 @@ A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a 
 
 - **Two Controls**: INPUT drives the signal past a fixed threshold, OUTPUT puts back what that cost
 - **Three Timings**: FAST, NORMAL and SLOW select attack and release together
-- **Stepped Knobs**: 21 positions each, 3 dB apart, 0 dB at the centre detent
+- **Stepped Knobs**: 21 detents each, 3 dB apart, 0 dB at the centre - hold Shift for 1 dB
 - **Full Metering**: Stereo input and output peak meters plus a gain-reduction strip
 - **VST3 Automation**: Full parameter automation support in DAWs
 
@@ -25,7 +25,7 @@ A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a 
 - **Distortion That Tracks Compression**: 0.02% at rest, 2.9% at 19 dB of reduction, because the device setting the gain is the device making the harmonics
 - **Four Amplifiers**: Input transformer, gain cell, single-ended class-A preamp (2nd harmonic), push-pull class-A output into the output iron (3rd)
 - **Two-Constant Release**: Fast and slow paths in parallel, the slow one weighted by how deep the reduction went
-- **Per-Stage Noise and Crosstalk**: Every stage adds its own noise and leaks into the channel beside it; -40 dB total, -83.6 dBFS floor
+- **Per-Stage Noise and Crosstalk**: Every stage adds its own noise and leaks into the channel beside it; -40 dB total, -93.7 dBFS floor
 - **Component Tolerance**: 2.5% per channel, so the two sides are never quite the same channel twice
 
 ## Download & Installation
@@ -109,8 +109,8 @@ This is a common issue with free audio plugins on macOS. You'll encounter the sa
 
 | Parameter | Range | Default | Description |
 |-----------|-------|---------|-------------|
-| Input | 21 steps, +/-30 dB | 0 dB (step 10) | Drive into the gain cell. More input is more compression |
-| Output | 21 steps, +/-30 dB | 0 dB (step 10) | Makeup gain after the output stage |
+| Input | 21 detents of 3 dB, +/-30 dB (1 dB with Shift) | 0 dB, centre detent | Drive into the gain cell. More input is more compression |
+| Output | 21 detents of 3 dB, +/-30 dB (1 dB with Shift) | 0 dB, centre detent | Makeup gain after the output stage |
 | Mode | 0-2 | 1 (NORMAL) | 0=FAST, 1=NORMAL, 2=SLOW |
 
 ### Timings
@@ -127,8 +127,8 @@ most compressors at their fastest.
 
 ### Mouse
 
-- **Wheel**: one detent per notch
-- **Shift-drag**: finer
+- **Wheel**: one detent per notch, or 1 dB with Shift held
+- **Shift-drag**: fine adjust, three steps inside every detent
 - **Ctrl-click** or **double-click**: back to 0 dB
 - **Right-click the panel**: UI Zoom - 75%, 100% or 125%
 
@@ -281,7 +281,7 @@ This installs to `~/Library/Audio/Plug-Ins/VST3/WetCompressor.vst3`
 - **Sidechain**: One attack constant, two release constants in parallel, slow path weighted by depth
 - **Input Transformer**: Low-frequency flux saturation and high-frequency leakage loss, ahead of the INPUT control as on the hardware
 - **Output Stage**: Push-pull class A into the output iron - symmetric, so third harmonic
-- **Noise**: Four uncorrelated sources per channel plus a tilted component, -83.6 dBFS
+- **Noise**: Four uncorrelated sources per channel plus a tilted component, -93.7 dBFS
 - **Thread Safety**: Lock-free atomic operations for GUI communication
 
 ## Project Structure
@@ -409,7 +409,7 @@ See the VST3 SDK license files for details on SDK licensing.
 ### v1.0.0 (2026-08-30)
 - Initial release
 - FET compressor with a feedback detector and a fixed 4:1 closed-loop ratio
-- Two stepped knobs, 21 positions each, and three timings
+- Two stepped knobs, 21 detents each (61 positions with Shift), and three timings
 - Stereo input and output metering plus a gain-reduction strip
 - Full VST3 automation support
 - Validated with official VST3 validator

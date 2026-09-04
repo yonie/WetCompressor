@@ -192,18 +192,16 @@ jobs:
           # The Installation block below is REQUIRED and stays: people land on the
           # release page from an aggregator with no idea what to do with a .vst3.
           body: |
-            **WetCompressor 1.0.0 - first release**
+            **WetCompressor 1.0.1**
 
-            A FET compressor modelled as the circuit. Two stepped knobs and three
-            buttons, because that is what the circuit has: no threshold control and no
-            ratio control, because the threshold is fixed and INPUT is how far you drive
-            the signal past it.
+            What changed since 1.0.0:
 
-            The detector is taken from the OUTPUT of the gain cell, so the 4:1 is a
-            closed-loop ratio that softens on its own near the threshold, and the loop is
-            always a sample behind the signal - which is why transients get through. The
-            cell bottoms out at 38 dB, and it distorts because it is compressing rather
-            than beside it: 0.02% at rest, 2.9% at 19 dB of reduction.
+            - Power user mode: hold **Shift** while dragging, scrolling or using the arrow keys for 3x the resolution - 1 dB instead of 3 dB. The 21 detents stay exactly where they were.
+            - Slightly lower self-noise: the floor is 10 dB further down.
+
+            A FET compressor modelled as the circuit. Two stepped knobs and three buttons, because that is what the circuit has: no threshold control and no ratio control, because the threshold is fixed and INPUT is how far you drive the signal past it.
+
+            The detector is taken from the OUTPUT of the gain cell, so the 4:1 is a closed-loop ratio that softens on its own near the threshold, and the loop is always a sample behind the signal - which is why transients get through. The cell bottoms out at 38 dB, and it distorts because it is compressing rather than beside it: 0.02% at rest, 2.9% at 19 dB of reduction.
 
             Windows, macOS (Intel and Apple Silicon) and Linux in one download.
 

@@ -19,6 +19,7 @@ static const std::string kAttrReduction   = "reduction-scheme";
 static const std::string kAttrButtons     = "button-rects";
 static const std::string kAttrLEDs        = "led-spots";
 static const std::string kAttrStepCount   = "step-count";
+static const std::string kAttrCoarseStep  = "coarse-step";
 static const std::string kAttrDbMin       = "db-min";
 static const std::string kAttrDbMax       = "db-max";
 
@@ -186,18 +187,27 @@ bool CompKnobCreator::apply(CView* view, const UIAttributes& attributes,
     if (attributes.getIntegerAttribute(kAttrStepCount, steps) && steps > 1)
         knob->setStepCount(steps);
 
+    // How many of those steps make one ordinary detent. Absent means 1, so a
+    // knob without the attribute behaves exactly as it did before Shift
+    // existed: every step reachable, no modifier needed.
+    int32_t coarse = 0;
+    if (attributes.getIntegerAttribute(kAttrCoarseStep, coarse) && coarse > 1)
+        knob->setCoarseStep(coarse);
+
     return true;
 }
 
 bool CompKnobCreator::getAttributeNames(StringList& names) const
 {
     names.emplace_back(kAttrStepCount);
+    names.emplace_back(kAttrCoarseStep);
     return true;
 }
 
 IViewCreator::AttrType CompKnobCreator::getAttributeType(const string& name) const
 {
-    if (name == kAttrStepCount) return kIntegerType;
+    if (name == kAttrStepCount)  return kIntegerType;
+    if (name == kAttrCoarseStep) return kIntegerType;
     return kUnknownType;
 }
 
@@ -210,6 +220,11 @@ bool CompKnobCreator::getAttributeValue(CView* view, const string& name,
     if (name == kAttrStepCount)
     {
         value = std::to_string(knob->getStepCount());
+        return true;
+    }
+    if (name == kAttrCoarseStep)
+    {
+        value = std::to_string(knob->getCoarseStep());
         return true;
     }
     return false;

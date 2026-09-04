@@ -157,8 +157,24 @@ tresult PLUGIN_API WetCompController::setComponentState(IBStream* state)
     if (!streamer.readInt32(version))
         return kResultFalse;
 
+    // Same read as WetCompProcessor::setState, and it has to stay the same: a
+    // host hands the identical stream to both, and a disagreement shows up as a
+    // UI that does not match what you hear.
+    int32 savedSteps = 0;
+    if (version >= 2)
+        streamer.readInt32(savedSteps);
+    if (savedSteps <= 1)
+        savedSteps = CompRange::kLegacySteps21;
+
     int32 v = 0;
-    auto restore = [&](Vst::ParamID id, int count) {
+    auto restoreKnob = [&](Vst::ParamID id) {
+        if (streamer.readInt32(v))
+        {
+            const int idx = CompRange::rescaleStep(v, savedSteps);
+            setParamNormalized(id, static_cast<double>(idx) / (CompRange::kSteps - 1));
+        }
+    };
+    auto restorePlain = [&](Vst::ParamID id, int count) {
         if (streamer.readInt32(v))
         {
             if (v < 0) v = 0;
@@ -166,9 +182,9 @@ tresult PLUGIN_API WetCompController::setComponentState(IBStream* state)
             setParamNormalized(id, count > 1 ? static_cast<double>(v) / (count - 1) : 0.0);
         }
     };
-    restore(kInputParam,  CompRange::kSteps);
-    restore(kOutputParam, CompRange::kSteps);
-    restore(kModeParam,   CompRange::kModeCount);
+    restoreKnob(kInputParam);
+    restoreKnob(kOutputParam);
+    restorePlain(kModeParam, CompRange::kModeCount);
 
     return kResultOk;
 }

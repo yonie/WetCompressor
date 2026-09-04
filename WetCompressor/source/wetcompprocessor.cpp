@@ -214,9 +214,24 @@ tresult PLUGIN_API WetCompProcessor::setState(IBStream* state)
     if (!streamer.readInt32(version))
         return kResultFalse;
 
+    // The grid the knob indices were written on. Version 2 says so; version 1
+    // was written by v1.0.0 only, which had twenty-one positions.
+    int32 savedSteps = 0;
+    if (version >= 2)
+        streamer.readInt32(savedSteps);
+    if (savedSteps <= 1)
+        savedSteps = CompRange::kLegacySteps21;
+
     CompEngine::Settings s;
     int32 v = 0;
-    auto rd = [&](int& dst, int count) {
+    // Knob: rescaled onto the current grid. MODE is not a knob - it is three
+    // named settings that have never been anything but three, so it is read
+    // straight and must never be rescaled.
+    auto rdKnob = [&](int& dst) {
+        if (streamer.readInt32(v))
+            dst = CompRange::rescaleStep(v, savedSteps);
+    };
+    auto rdPlain = [&](int& dst, int count) {
         if (streamer.readInt32(v))
         {
             if (v < 0) v = 0;
@@ -224,9 +239,9 @@ tresult PLUGIN_API WetCompProcessor::setState(IBStream* state)
             dst = v;
         }
     };
-    rd(s.input,  CompRange::kSteps);
-    rd(s.output, CompRange::kSteps);
-    rd(s.mode,   CompRange::kModeCount);
+    rdKnob(s.input);
+    rdKnob(s.output);
+    rdPlain(s.mode, CompRange::kModeCount);
 
     pending = s;
     engine.setSettings(s);
@@ -242,8 +257,11 @@ tresult PLUGIN_API WetCompProcessor::getState(IBStream* state)
     IBStreamer streamer(state, kLittleEndian);
 
     // Versioned from the start, so a later parameter addition can still load an
-    // old session.
-    streamer.writeInt32(1);
+    // old session. Version 2 also writes the step count, so the indices below
+    // can be read back onto whatever grid a later build uses - see the note in
+    // compengine.h about what happened to WetEQ without this.
+    streamer.writeInt32(2);
+    streamer.writeInt32(CompRange::kSteps);
 
     const CompEngine::Settings& s = engine.settings();
     streamer.writeInt32(s.input);
