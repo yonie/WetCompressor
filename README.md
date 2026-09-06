@@ -9,6 +9,8 @@ A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a 
 
 ![WetCompressor Plugin Screenshot](docs/panel.png)
 
+> **Panel too big or too small?** Right-click anywhere on the panel and pick **UI Zoom** - 75%, 100% or 125%.
+
 ## Features
 
 - **Two Controls**: INPUT drives the signal past a fixed threshold, OUTPUT puts back what that cost
@@ -16,6 +18,7 @@ A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a 
 - **Stepped Knobs**: 21 detents each, 3 dB apart, 0 dB at the centre - hold Shift for 1 dB
 - **Full Metering**: Stereo input and output peak meters plus a gain-reduction strip
 - **VST3 Automation**: Full parameter automation support in DAWs
+- **Resizable UI**: Right-click the panel for UI Zoom - 75%, 100% or 125%
 
 ### FET Rack-Style Character
 
