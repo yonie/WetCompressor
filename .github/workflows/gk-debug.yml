@@ -1,0 +1,34 @@
+name: Gatekeeper debug (temporary)
+
+on:
+  push:
+    branches: [sign-test]
+    paths: ['.github/workflows/gk-debug.yml']
+
+jobs:
+  check:
+    runs-on: macos-14
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-test-zip
+          run-id: 36114168623
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Inspect
+        run: |
+          sw_vers
+          ditto -x -k WetCompressor-test-*.zip .
+          C=WetCompressor.component
+          echo "== unquarantined component"; syspolicy_check distribution $C --verbose || true
+          echo "== nested vst3 alone"; syspolicy_check distribution $C/Contents/Resources/plugin.vst3 --verbose || true
+          echo "== structure"; find $C -maxdepth 4 | head -40
+          echo "== signatures"; codesign -dvvv $C 2>&1 | grep -E "Identifier|Authority|Runtime|flags|Timestamp"
+          codesign -dvvv $C/Contents/Resources/plugin.vst3 2>&1 | grep -E "Identifier|Authority|Runtime|flags"
+          echo "== xprotect"; ls /Library/Apple/System/Library/CoreServices/XProtect.bundle/Contents/Resources 2>&1 | head
+          echo "== syspolicy log"; log show --last 5m --predicate 'process == "syspolicy_check" OR subsystem CONTAINS "xprotect"' --style compact 2>/dev/null | tail -40
+          echo "== auval on quarantined copy"
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          ditto $C ~/Library/Audio/Plug-Ins/Components/$C
+          xattr -w -r com.apple.quarantine "0083;$(printf '%x' $(date +%s));Safari;$(uuidgen)" ~/Library/Audio/Plug-Ins/Components/$C
+          killall -9 AudioComponentRegistrar || true
+          auval -v aufx Wcmp WetV | tail -5
