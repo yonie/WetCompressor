@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - 'v*'
+    branches: [sign-test]  # TEMPORARY: test run, remove before merging
+  # A manual run builds, signs and notarises the zip and keeps it as an
+  # artifact. Only a tag publishes a release.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -174,28 +178,47 @@ jobs:
           chmod +x scripts/merge-vst3.sh
           ./scripts/merge-vst3.sh
 
-      - name: Code sign universal VST3 bundle
-        run: |
-          echo "Re-signing universal VST3 bundle for macOS..."
-          codesign --force --deep --sign - build/WetCompressor.vst3
+      - name: Unpack Audio Unit
+        run: ditto -x -k artifacts/au/WetCompressor-AU.zip build
 
-      - name: Verify universal bundle signature
+      - name: Sign and notarise for macOS
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: |
-          echo "Verifying universal bundle signature..."
-          codesign -v build/WetCompressor.vst3
+          chmod +x scripts/sign-macos.sh
+          ./scripts/sign-macos.sh build/WetCompressor.vst3 build/WetCompressor.component
 
       - name: Create ZIP archive
         run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            ZIP=WetCompressor-${{ github.ref_name }}.zip
+          else
+            ZIP=WetCompressor-test-${GITHUB_SHA::7}.zip
+          fi
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
           cd build
           cp ../packaging/README.txt .
-          ditto -x -k ../artifacts/au/WetCompressor-AU.zip .
-          zip -ry ../WetCompressor-${{ github.ref_name }}.zip WetCompressor.vst3 WetCompressor.component README.txt
-          ls -la ../WetCompressor-${{ github.ref_name }}.zip
+          zip -ry ../$ZIP WetCompressor.vst3 WetCompressor.component README.txt
+          ls -la ../$ZIP
+
+      - name: Upload test zip
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-test-zip
+          path: ${{ env.ZIP }}
+          retention-days: 7
 
       - name: Create Release
+        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v1
         with:
-          files: WetCompressor-${{ github.ref_name }}.zip
+          files: ${{ env.ZIP }}
           generate_release_notes: true
           draft: false
           # NOTE: this body is hardcoded and does NOT update itself. Rewrite the
@@ -228,10 +251,7 @@ jobs:
 
             **Linux**: Extract to `~/.vst3/` or `/usr/lib/vst3/`
 
-            **macOS**:
-            1. Extract to `~/Library/Audio/Plug-Ins/VST3/`
-            2. Run: `xattr -cr ~/Library/Audio/Plug-Ins/VST3/WetCompressor.vst3`
-            3. The plugin is unsigned, so macOS quarantines it. That does not mean it is unsafe.
+            **macOS**: Copy `WetCompressor.vst3` to `~/Library/Audio/Plug-Ins/VST3/`, and `WetCompressor.component` (Logic, GarageBand) to `~/Library/Audio/Plug-Ins/Components/`
 
             Restart your DAW and rescan for plugins.
 
