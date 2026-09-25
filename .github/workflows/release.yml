@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-    branches: [sign-test]  # TEMPORARY: test run, remove before merging
   # A manual run builds, signs and notarises the zip and keeps it as an
   # artifact. Only a tag publishes a release.
   workflow_dispatch:
