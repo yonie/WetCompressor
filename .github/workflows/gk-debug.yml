@@ -12,7 +12,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: signed-test-zip
-          run-id: 36114168623
+          run-id: 36113524057
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Inspect
         run: |
