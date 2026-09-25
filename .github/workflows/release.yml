@@ -206,6 +206,26 @@ jobs:
           zip -ry ../$ZIP WetCompressor.vst3 WetCompressor.component README.txt
           ls -la ../$ZIP
 
+      # Plays the user: unpack the zip as downloaded, flag it the way a browser
+      # or chat app does, and ask Gatekeeper whether it would open.
+      - name: Gatekeeper check on the zip as downloaded
+        run: |
+          rm -rf gk && mkdir gk && cd gk
+          ditto -x -k "../$ZIP" .
+          QUARANTINE="0083;$(printf '%x' $(date +%s));Safari;$(uuidgen)"
+          xattr -w -r com.apple.quarantine "$QUARANTINE" WetCompressor.vst3 WetCompressor.component
+          xattr -p com.apple.quarantine WetCompressor.component
+          for B in WetCompressor.vst3 WetCompressor.component; do
+            spctl --assess --type open --context context:primary-signature --verbose=2 "$B"
+            syspolicy_check distribution "$B"
+          done
+          rm -rf ~/Library/Audio/Plug-Ins/Components/WetCompressor.component
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          ditto WetCompressor.component ~/Library/Audio/Plug-Ins/Components/WetCompressor.component
+          xattr -p com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/WetCompressor.component
+          killall -9 AudioComponentRegistrar || true
+          auval -v aufx Wcmp WetV
+
       - name: Upload test zip
         if: github.ref_type != 'tag'
         uses: actions/upload-artifact@v4
