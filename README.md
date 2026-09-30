@@ -7,7 +7,9 @@
 
 A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a gain computer, with the feedback detector, transformers and gain-cell distortion of a 1960s rack limiter.
 
-![WetCompressor Plugin Screenshot](docs/panel.png)
+**Download:** [wetvst.com/wetcompressor](https://wetvst.com/wetcompressor/)
+
+[![WetCompressor Plugin Screenshot](docs/panel.png)](https://wetvst.com/wetcompressor/)
 
 > **Panel too big or too small?** Right-click anywhere on the panel and pick **UI Zoom** - 75%, 100% or 125%.
 
@@ -35,7 +37,7 @@ A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a 
 
 ### Windows
 
-1. **Download** the latest release from [GitHub Releases](https://github.com/yonie/WetCompressor/releases)
+1. **Download** the latest release from [wetvst.com](https://wetvst.com/wetcompressor/) or [GitHub Releases](https://github.com/yonie/WetCompressor/releases)
 2. **Extract** the ZIP file
 3. **Copy** `WetCompressor.vst3` to your VST3 folder:
    - User: `C:\Users\[Username]\Documents\VST3\`
@@ -44,7 +46,7 @@ A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a 
 
 ### Linux
 
-1. **Download** the latest release from [GitHub Releases](https://github.com/yonie/WetCompressor/releases)
+1. **Download** the latest release from [wetvst.com](https://wetvst.com/wetcompressor/) or [GitHub Releases](https://github.com/yonie/WetCompressor/releases)
 2. **Extract** the ZIP file
 3. **Copy** `WetCompressor.vst3` to your VST3 folder:
    - User: `~/.vst3/`
@@ -53,7 +55,7 @@ A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a 
 
 ### macOS
 
-1. **Download** the latest release from [GitHub Releases](https://github.com/yonie/WetCompressor/releases)
+1. **Download** the latest release from [wetvst.com](https://wetvst.com/wetcompressor/) or [GitHub Releases](https://github.com/yonie/WetCompressor/releases)
 2. **Extract** the ZIP file
 3. **Copy** `WetCompressor.vst3` to your VST3 folder:
    ```
