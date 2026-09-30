@@ -3,6 +3,7 @@
 //------------------------------------------------------------------------
 
 #include "wetcompcontroller.h"
+#include "weteditor.h"
 #include "wetcompcids.h"
 #include "compengine.h"
 #include "customviewcreator.h"
@@ -194,7 +195,7 @@ IPlugView* PLUGIN_API WetCompController::createView(FIDString name)
 {
     if (FIDStringsEqual(name, Vst::ViewType::kEditor))
     {
-        auto* editor = new VSTGUI::VST3Editor(this, "view", "wetcompeditor.uidesc");
+        auto* editor = new Yonie::WetEditor (this, "view", "wetcompeditor.uidesc");
 
         // Discrete zoom steps, as WetEQ. The assets are baked at 1x, so
         // anything above 125% interpolates and goes soft.
