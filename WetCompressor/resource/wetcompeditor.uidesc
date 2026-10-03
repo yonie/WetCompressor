@@ -43,6 +43,7 @@
 		      reduction-scheme="false"
 		      db-min="-48"
 		      db-max="18"
+		      db-thresholds="-50, -40, -30, -24, -18, -12, -9, -6, -3, 0, 3, 6"
 		      transparent="false"/>
 
 		<view class="LEDMeterView"
@@ -56,6 +57,7 @@
 		      reduction-scheme="false"
 		      db-min="-48"
 		      db-max="18"
+		      db-thresholds="-50, -40, -30, -24, -18, -12, -9, -6, -3, 0, 3, 6"
 		      transparent="false"/>
 
 		<view class="LEDMeterView"
@@ -80,6 +82,7 @@
 		      reduction-scheme="false"
 		      db-min="-48"
 		      db-max="18"
+		      db-thresholds="-50, -40, -30, -24, -18, -12, -9, -6, -3, 0, 3, 6"
 		      transparent="false"/>
 
 		<view class="LEDMeterView"
@@ -93,6 +96,7 @@
 		      reduction-scheme="false"
 		      db-min="-48"
 		      db-max="18"
+		      db-thresholds="-50, -40, -30, -24, -18, -12, -9, -6, -3, 0, 3, 6"
 		      transparent="false"/>
 
 		<!-- INPUT and OUTPUT. Eleven detents, one frame per printed value,
