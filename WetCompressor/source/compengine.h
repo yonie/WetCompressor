@@ -33,6 +33,8 @@
 #include "wetcore.h"
 #include "fetcore.h"
 
+#include <vector>
+
 namespace Yonie {
 
 //------------------------------------------------------------------------
@@ -164,6 +166,13 @@ public:
     // reducing). The GR meter reads this.
     float gainReductionDb() const { return grPeakDb; }
 
+    // The signal just after the INPUT knob, one sample per sample of the block
+    // just processed. The IN meter reads this: INPUT decides how hard every
+    // stage after it works, so the meter beside it shows that level - the line
+    // rule WetWeld set (Ronald, 2026-09-11: "IN meter must be taken post gain").
+    const float* postInputL() const { return tapL.data(); }
+    const float* postInputR() const { return tapR.data(); }
+
     double inputDb()  const { return CompRange::stepDb(current.input); }
     double outputDb() const { return CompRange::stepDb(current.output); }
 
@@ -255,6 +264,7 @@ private:
     StageNoise tiltNoiseL, tiltNoiseR;
 
     bool saturate = true;
+    std::vector<float> tapL, tapR;      // post-INPUT samples, for the IN meter
     bool crosstalk = true;
     bool hiss = true;
 

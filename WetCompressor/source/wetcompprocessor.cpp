@@ -146,16 +146,15 @@ tresult PLUGIN_API WetCompProcessor::process(Vst::ProcessData& data)
     if (!monoBus.begin(input, output, data.numSamples, inL, inR, outL, outR))
         return kResultOk;
 
-    for (int32 i = 0; i < data.numSamples; ++i)
-    {
-        updatePeak(inL[i], inPeakL);
-        updatePeak(inR[i], inPeakR);
-    }
-
     engine.processStereo(inL, inR, outL, outR, data.numSamples);
 
+    // IN reads after the INPUT knob, OUT after the OUTPUT knob.
+    const float* postL = engine.postInputL();
+    const float* postR = engine.postInputR();
     for (int32 i = 0; i < data.numSamples; ++i)
     {
+        updatePeak(postL[i], inPeakL);
+        updatePeak(postR[i], inPeakR);
         updatePeak(outL[i], outPeakL);
         updatePeak(outR[i], outPeakR);
     }

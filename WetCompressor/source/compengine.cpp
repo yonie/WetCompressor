@@ -50,7 +50,8 @@ Sidechain::Times CompEngine::timesFor(int mode)
 //------------------------------------------------------------------------
 void CompEngine::prepare(double hostSampleRate, int maxBlockSize)
 {
-    (void)maxBlockSize;
+    tapL.assign(static_cast<size_t>(maxBlockSize > 0 ? maxBlockSize : 1), 0.0f);
+    tapR.assign(tapL.size(), 0.0f);
     hostRate = hostSampleRate > 0.0 ? hostSampleRate : 44100.0;
 
     // Draw this unit's component tolerances once. A given build of the plugin
@@ -190,6 +191,11 @@ void CompEngine::processStereo(const float* inL, const float* inR,
         // --- INPUT: the attenuator into the gain cell -----------------------
         l *= inGain;
         r *= inGain;
+        if (i < static_cast<int>(tapL.size()))
+        {
+            tapL[i] = l;
+            tapR[i] = r;
+        }
 
         // --- stage 2: the gain cell, with the loop one sample behind --------
         //
