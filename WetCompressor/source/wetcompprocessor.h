@@ -8,6 +8,7 @@
 #include "compengine.h"
 #include "wetcompcids.h"
 #include "monobus.h"
+#include "meterlevel.h"
 #include <atomic>
 
 namespace Yonie {

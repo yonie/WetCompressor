@@ -184,10 +184,10 @@ tresult PLUGIN_API WetCompProcessor::process(Vst::ProcessData& data)
             }
         };
 
-        sendMeter(kInputMeterL, inPeakL.load(), oldInL);
-        sendMeter(kInputMeterR, inPeakR.load(), oldInR);
-        sendMeter(kOutputMeterL, outPeakL.load(), oldOutL);
-        sendMeter(kOutputMeterR, outPeakR.load(), oldOutR);
+        sendMeter(kInputMeterL, Meter::encode(inPeakL.load()), oldInL);
+        sendMeter(kInputMeterR, Meter::encode(inPeakR.load()), oldInR);
+        sendMeter(kOutputMeterL, Meter::encode(outPeakL.load()), oldOutL);
+        sendMeter(kOutputMeterR, Meter::encode(outPeakR.load()), oldOutR);
         sendMeter(kGRMeter, grDisplay, oldGR);
     }
 
