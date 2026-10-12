@@ -5,33 +5,24 @@
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 ![Version](https://img.shields.io/badge/version-1.0.0-orange)
 
-A 76-style FET compressor VST3 plugin, modelled as the circuit rather than as a gain computer, with the feedback detector, transformers and gain-cell distortion of a 1960s rack limiter.
+Easy to use FET compressor with high resolution metering. Get to a great sound in seconds!
 
 **Download:** [wetvst.com/wetcompressor](https://wetvst.com/wetcompressor/)
 
 [![WetCompressor Plugin Screenshot](docs/panel.png)](https://wetvst.com/wetcompressor/)
 
-> **Panel too big or too small?** Right-click anywhere on the panel and pick **UI Zoom** - 75%, 100% or 125%.
+> **Panel too big or too small?** Right-click anywhere on the panel and pick **UI Zoom**, from 50% to 125%.
 
 ## Features
 
-- **Two Controls**: INPUT drives the signal past a fixed threshold, OUTPUT puts back what that cost
-- **Three Timings**: FAST, NORMAL and SLOW select attack and release together
-- **Stepped Knobs**: 21 detents each, 3 dB apart, 0 dB at the centre - hold Shift for 1 dB
-- **Full Metering**: Stereo input and output peak meters plus a gain-reduction strip
-- **VST3 Automation**: Full parameter automation support in DAWs
-- **Resizable UI**: Right-click the panel for UI Zoom - 75%, 100% or 125%
+- Easily dial in the right response using the hand-tuned Fast, Normal and Slow presets
+- Quickly set levels using the stepped INPUT and OUTPUT, 21 positions each, fixed threshold and ratio
+- Classic sound: pushing the unit makes the sound slightly overdriven for a more authorative sound
+- Closely monitor the unit operation using the real-time gain reduction and I/O LED metering
+- Resizable panel: right-click and zoom from 50% to 125%
+- INPUT drives the signal past a fixed threshold, OUTPUT puts back what that cost
+- Full parameter automation in every major DAW
 
-### FET Rack-Style Character
-
-- **Feedback Detector**: Taken from the output of the gain cell, so the 4:1 is a closed-loop ratio that softens on its own near the threshold - no knee control needed
-- **One Sample of Loop Delay**: The detector cannot see a sample until it has been through the cell, so the leading edge of a transient gets through
-- **Gain Cell That Bottoms Out**: A hard floor at 38 dB of reduction; past that, driving harder buys distortion rather than compression
-- **Distortion That Tracks Compression**: 0.02% at rest, 2.9% at 19 dB of reduction, because the device setting the gain is the device making the harmonics
-- **Four Amplifiers**: Input transformer, gain cell, single-ended class-A preamp (2nd harmonic), push-pull class-A output into the output iron (3rd)
-- **Two-Constant Release**: Fast and slow paths in parallel, the slow one weighted by how deep the reduction went
-- **Per-Stage Noise and Crosstalk**: Every stage adds its own noise and leaks into the channel beside it; -40 dB total, -93.7 dBFS floor
-- **Component Tolerance**: 2.5% per channel, so the two sides are never quite the same channel twice
 
 ## Download & Installation
 
@@ -111,7 +102,7 @@ most compressors at their fastest.
 - **Wheel**: one detent per notch, or 1 dB with Shift held
 - **Shift-drag**: fine adjust, three steps inside every detent
 - **Ctrl-click** or **double-click**: back to 0 dB
-- **Right-click the panel**: UI Zoom - 75%, 100% or 125%
+- **Right-click the panel**: UI Zoom, from 50% to 125%
 
 ![Specification](docs/curves.png)
 
@@ -385,28 +376,3 @@ See the VST3 SDK license files for details on SDK licensing.
 - The audio plugin development community
 
 
-## Version History
-
-### v1.0.0 (2026-08-30)
-- Initial release
-- FET compressor with a feedback detector and a fixed 4:1 closed-loop ratio
-- Two stepped knobs, 21 detents each (61 positions with Shift), and three timings
-- Stereo input and output metering plus a gain-reduction strip
-- Full VST3 automation support
-- Validated with official VST3 validator
-- **Modelled as the circuit**:
-  - Gain cell with drain-to-gate linearisation and a 38 dB floor
-  - Distortion and noise that rise with gain reduction
-  - Input and output transformers, class-A preamp, push-pull output stage
-- **Per-Stage Noise and Crosstalk**:
-  - -40 dB channel bleed distributed across all stages
-  - 2.5% component tolerance per channel
-
-
----
-
-**Built with ❤️ and precision engineering**
-
----
-
-Part of **[WET](https://wetvst.com)** - with [WetDelay](https://github.com/yonie/WetDelay), [WetReverb](https://github.com/yonie/WetReverb) and [WetEQ](https://github.com/yonie/WetEQ)

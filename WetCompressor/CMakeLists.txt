@@ -75,7 +75,7 @@ smtg_target_configure_version_file(WetCompressor)
 if(SMTG_MAC)
     smtg_target_set_bundle(WetCompressor
         BUNDLE_IDENTIFIER org.yonie.vst3.wetcompressor
-        COMPANY_NAME "Yonie"
+        COMPANY_NAME "WET VST"
     )
     smtg_target_set_debug_executable(WetCompressor
         "/Applications/VST3PluginTestHost.app"
