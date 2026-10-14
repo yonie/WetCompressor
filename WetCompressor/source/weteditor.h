@@ -15,6 +15,9 @@
 //    those zoom steps, and VSTGUI's own answer is always yes, so hosts drew resize
 //    arrows on the window edge that did nothing (WetDelay #2). A zoom step still
 //    resizes the window: that goes through resizeView, which canResize does not gate.
+//
+// A plug-in can add its own entries under the zoom steps through extraEntries, as
+// plain entries for the same reason the zoom steps are (WetCompressor's detector).
 //------------------------------------------------------------------------
 
 #pragma once
@@ -24,6 +27,7 @@
 #include "vstgui/lib/events.h"
 
 #include <cstdio>
+#include <functional>
 #include <vector>
 
 namespace Yonie {
@@ -34,6 +38,9 @@ public:
     using VSTGUI::VST3Editor::VST3Editor;
 
     Steinberg::tresult PLUGIN_API canResize() override { return Steinberg::kResultFalse; }
+
+    // Called after the zoom steps are added, to append the plug-in's own entries.
+    std::function<void(VSTGUI::COptionMenu*)> extraEntries;
 
     void onMouseEvent(VSTGUI::MouseEvent& event, VSTGUI::CFrame* frame) override
     {
@@ -47,7 +54,7 @@ public:
         // not built as well. The entries use VST3Editor's own "Zoom" command, which reads
         // allowedZoomFactors when chosen - after both are put back.
         const auto factors = allowedZoomFactors;
-        ZoomEntries entries(delegate, factors, getZoomFactor());
+        ZoomEntries entries(delegate, factors, getZoomFactor(), extraEntries);
         auto* realDelegate = delegate;
         delegate = &entries;
         allowedZoomFactors.clear();
@@ -61,8 +68,9 @@ private:
     // the parameter under the mouse - and adds the zoom entries to the menu.
     struct ZoomEntries : VSTGUI::VST3EditorDelegate
     {
-        ZoomEntries(VSTGUI::IVST3EditorDelegate* real, const std::vector<double>& factors, double current)
-        : real(real), factors(factors), current(current) {}
+        ZoomEntries(VSTGUI::IVST3EditorDelegate* real, const std::vector<double>& factors, double current,
+                    const std::function<void(VSTGUI::COptionMenu*)>& extra)
+        : real(real), factors(factors), current(current), extra(extra) {}
 
         VSTGUI::COptionMenu* createContextMenu(const VSTGUI::CPoint& pos, VSTGUI::VST3Editor* editor) override
         {
@@ -80,6 +88,8 @@ private:
                 if (factors[i] == current)
                     item->setChecked(true);
             }
+            if (extra)
+                extra(menu);
             return menu;
         }
         bool findParameter(const VSTGUI::CPoint& pos, Steinberg::Vst::ParamID& id, VSTGUI::VST3Editor* editor) override
@@ -94,6 +104,7 @@ private:
         VSTGUI::IVST3EditorDelegate* real;
         const std::vector<double>& factors;
         double current;
+        const std::function<void(VSTGUI::COptionMenu*)>& extra;
     };
 };
 

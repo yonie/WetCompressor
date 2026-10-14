@@ -381,6 +381,69 @@ void writeJson(const char* path)
     std::printf("wrote %s\n", path);
 }
 
+//------------------------------------------------------------------------
+// The sidechain stand. The tone into the main input and the tone into the
+// sidechain are set separately; keyAmp < 0 means nothing is connected.
+// Returns the settled main-input output in dBFS. Analog stages out.
+double keyedOut(int detector, double mainDb, double keyDb, bool keyConnected)
+{
+    Engine e(CompRange::kNormal, false);
+    CompEngine::Settings st = e.eng.settings();
+    st.detector = detector;
+    e.eng.setSettings(st);
+
+    const double a = lin(mainDb), k = lin(keyDb);
+    const int settle = static_cast<int>(kRate * 1.2);
+    const int total = settle + static_cast<int>(kRate * 0.3);
+    std::vector<float> out(total), outR(total);
+    std::vector<float> inL(kBlock), inR(kBlock), keyL(kBlock), keyR(kBlock);
+    for (int base = 0; base < total; base += kBlock)
+    {
+        const int n = std::min(kBlock, total - base);
+        for (int i = 0; i < n; ++i)
+        {
+            const double ph = 2.0 * kPI * 1000.0 * (base + i) / kRate;
+            inL[i] = inR[i] = static_cast<float>(a * std::sin(ph));
+            keyL[i] = keyR[i] = static_cast<float>(k * std::sin(ph));
+        }
+        e.eng.processStereo(inL.data(), inR.data(), &out[base], &outR[base], n,
+                            keyConnected ? keyL.data() : nullptr,
+                            keyConnected ? keyR.data() : nullptr);
+    }
+    return dB(magnitudeAt(out, 1000.0, settle));
+}
+
+// Gain reduction against time with the step on the KEY and the main input
+// held quiet underneath, so what moves is the sidechain alone.
+double keyedReleaseMs(int mode)
+{
+    Engine e(mode, false);
+    CompEngine::Settings st = e.eng.settings();
+    st.detector = CompRange::kDetectSidechain;
+    e.eng.setSettings(st);
+    const int perMs = static_cast<int>(kRate / 1000.0);
+    std::vector<float> inL(perMs), inR(perMs), outL(perMs), outR(perMs), key(perMs);
+    std::vector<double> gr;
+    for (int ms = 0; ms < 2000; ++ms)
+    {
+        const bool on = ms >= 200 && ms < 500;
+        for (int i = 0; i < perMs; ++i)
+        {
+            const int n = ms * perMs + i;
+            key[i] = on ? static_cast<float>(lin(-6.0) * std::sin(2.0 * kPI * 220.0 * n / kRate)) : 0.0f;
+            inL[i] = inR[i] = static_cast<float>(lin(-40.0) * std::sin(2.0 * kPI * 1000.0 * n / kRate));
+        }
+        e.eng.processStereo(inL.data(), inR.data(), outL.data(), outR.data(), perMs,
+                            key.data(), key.data());
+        gr.push_back(e.eng.gainReductionDb());
+    }
+    double peak = 0.0;
+    for (size_t i = 200; i < 500; ++i) peak = std::max(peak, gr[i]);
+    for (size_t i = 500; i < gr.size(); ++i)
+        if (gr[i] <= 0.37 * peak) return static_cast<double>(i - 500);
+    return -1.0;
+}
+
 } // namespace
 
 //------------------------------------------------------------------------
@@ -463,10 +526,42 @@ int main(int argc, char** argv)
                 noiseFloorDb());
     std::printf("Channel crosstalk %6.1f dB\n", crosstalkDb());
 
+    //--- the sidechain stand ---------------------------------------------
+    int failed = 0;
+    auto expect = [&](const char* what, double got, double want, double tol) {
+        const bool ok = std::fabs(got - want) <= tol;
+        if (!ok) ++failed;
+        std::printf("   %-46s got %7.2f  want %7.2f  %s\n", what, got, want, ok ? "ok" : "FAIL");
+    };
+    std::printf("\nDetector: Sidechain (1 kHz, analog stages out, NORMAL)\n");
+    for (double in : { -30.0, -20.0, -10.0, 0.0 })
+    {
+        char what[64];
+        std::snprintf(what, sizeof(what), "key = main at %+.0f dBFS, same as Main", in);
+        expect(what, keyedOut(CompRange::kDetectSidechain, in, in, true),
+               keyedOut(CompRange::kDetectMain, in, in, true), 0.6);
+    }
+    expect("nothing on the sidechain: no reduction", keyedOut(CompRange::kDetectSidechain, 0.0, 0.0, false), 0.0, 0.1);
+    expect("key -100 dBFS: no reduction", keyedOut(CompRange::kDetectSidechain, 0.0, -100.0, true), 0.0, 0.1);
+    expect("main -40, key -4: ducked by 0.75 x 16 dB", keyedOut(CompRange::kDetectSidechain, -40.0, -4.0, true), -52.0, 0.6);
+    expect("Main ignores the sidechain", keyedOut(CompRange::kDetectMain, -40.0, -4.0, true), -40.0, 0.1);
+    std::printf("   release from the key, 63%%:");
+    for (int m = 0; m < 3; ++m)
+    {
+        auto gr = stepResponse(m);
+        double peak = 0.0;
+        for (size_t i = 200; i < 500; ++i) peak = std::max(peak, gr[i]);
+        int rel = -1;
+        for (size_t i = 500; i < gr.size(); ++i)
+            if (gr[i] <= 0.37 * peak) { rel = static_cast<int>(i) - 500; break; }
+        std::printf("  %s %d ms (Main %d)", kModeName[m], static_cast<int>(keyedReleaseMs(m)), rel);
+    }
+    std::printf("\n   %s\n", failed ? "SIDECHAIN FAILED" : "SIDECHAIN PASSED");
+
     if (jsonPath)
     {
         std::printf("\n");
         writeJson(jsonPath);
     }
-    return 0;
+    return failed ? 1 : 0;
 }

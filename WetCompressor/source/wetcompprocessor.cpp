@@ -34,6 +34,10 @@ tresult PLUGIN_API WetCompProcessor::initialize(FUnknown* context)
 
     addAudioInput(STR16("Stereo In"), Steinberg::Vst::SpeakerArr::kStereo);
     addAudioOutput(STR16("Stereo Out"), Steinberg::Vst::SpeakerArr::kStereo);
+    // The sidechain, pins 3/4. Inactive until the host routes something to it;
+    // the detector only listens to it when set to Sidechain.
+    addAudioInput(STR16("Sidechain"), Steinberg::Vst::SpeakerArr::kStereo,
+                  Steinberg::Vst::BusTypes::kAux, 0);
 
     return kResultOk;
 }
@@ -64,7 +68,11 @@ tresult PLUGIN_API WetCompProcessor::setActive(TBool state)
 tresult PLUGIN_API WetCompProcessor::setBusArrangements(Vst::SpeakerArrangement* inputs, int32 numIns,
                                             Vst::SpeakerArrangement* outputs, int32 numOuts)
 {
-    if (!Wet::MonoBus::accepts(inputs, numIns, outputs, numOuts))
+    // The main pair goes through MonoBus's rules; a sidechain, when the host
+    // names one, may be mono or stereo.
+    if (numIns < 1 || numIns > 2 || !Wet::MonoBus::accepts(inputs, 1, outputs, numOuts))
+        return kResultFalse;
+    if (numIns == 2 && inputs[1] != Vst::SpeakerArr::kMono && inputs[1] != Vst::SpeakerArr::kStereo)
         return kResultFalse;
     return AudioEffect::setBusArrangements(inputs, numIns, outputs, numOuts);
 }
@@ -105,6 +113,7 @@ void WetCompProcessor::applyParameter(Vst::ParamID id, Vst::ParamValue value)
         case kInputParam:  pending.input  = toStep(value, CompRange::kSteps); break;
         case kOutputParam: pending.output = toStep(value, CompRange::kSteps); break;
         case kModeParam:   pending.mode   = toStep(value, CompRange::kModeCount); break;
+        case kDetectorParam: pending.detector = toStep(value, CompRange::kDetectorCount); break;
         default: break;
     }
 }
@@ -146,7 +155,17 @@ tresult PLUGIN_API WetCompProcessor::process(Vst::ProcessData& data)
     if (!monoBus.begin(input, output, data.numSamples, inL, inR, outL, outR))
         return kResultOk;
 
-    engine.processStereo(inL, inR, outL, outR, data.numSamples);
+    // The sidechain, when the host has it connected. A mono one feeds both
+    // sides of the detector; none at all is silence.
+    const float* keyL = nullptr;
+    const float* keyR = nullptr;
+    if (data.numInputs >= 2 && data.inputs[1].numChannels >= 1 && data.inputs[1].channelBuffers32)
+    {
+        keyL = data.inputs[1].channelBuffers32[0];
+        keyR = data.inputs[1].numChannels >= 2 ? data.inputs[1].channelBuffers32[1] : keyL;
+    }
+
+    engine.processStereo(inL, inR, outL, outR, data.numSamples, keyL, keyR);
 
     // IN reads after the INPUT knob, OUT after the OUTPUT knob.
     const float* postL = engine.postInputL();
@@ -246,6 +265,10 @@ tresult PLUGIN_API WetCompProcessor::setState(IBStream* state)
     rdKnob(s.input);
     rdKnob(s.output);
     rdPlain(s.mode, CompRange::kModeCount);
+    // Version 3 added the detector. Anything older was written before there
+    // was a choice, so it listened to the main input.
+    if (version >= 3)
+        rdPlain(s.detector, CompRange::kDetectorCount);
 
     pending = s;
     engine.setSettings(s);
@@ -264,13 +287,15 @@ tresult PLUGIN_API WetCompProcessor::getState(IBStream* state)
     // old session. Version 2 also writes the step count, so the indices below
     // can be read back onto whatever grid a later build uses - see the note in
     // compengine.h about what happened to WetEQ without this.
-    streamer.writeInt32(2);
+    // Version 3 appends the detector.
+    streamer.writeInt32(3);
     streamer.writeInt32(CompRange::kSteps);
 
     const CompEngine::Settings& s = engine.settings();
     streamer.writeInt32(s.input);
     streamer.writeInt32(s.output);
     streamer.writeInt32(s.mode);
+    streamer.writeInt32(s.detector);
 
     return kResultOk;
 }

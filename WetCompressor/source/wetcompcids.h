@@ -37,7 +37,11 @@ enum WetCompParams : Steinberg::Vst::ParamID
     kOutputMeterL = 6,
     kOutputMeterR = 7,
 
-    kParamCount   = 8
+    // What the detector listens to: the main input (1/2), or the sidechain
+    // input (3/4). Set from the right-click menu; no control on the panel.
+    kDetectorParam = 8,
+
+    kParamCount   = 9
 };
 
 //------------------------------------------------------------------------

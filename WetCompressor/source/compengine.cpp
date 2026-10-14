@@ -153,7 +153,8 @@ void CompEngine::updateFromSettings()
 
 //------------------------------------------------------------------------
 void CompEngine::processStereo(const float* inL, const float* inR,
-                               float* outL, float* outR, int numSamples)
+                               float* outL, float* outR, int numSamples,
+                               const float* keyL, const float* keyR)
 {
     if (numSamples <= 0)
         return;
@@ -162,6 +163,9 @@ void CompEngine::processStereo(const float* inL, const float* inR,
     const float hs = hiss ? kStageHiss : 0.0f;
 
     float grPeak = 0.0f;
+    const bool keyed = current.detector == CompRange::kDetectSidechain;
+    if (keyed && keyL && !keyR)
+        keyR = keyL;
 
     for (int i = 0; i < numSamples; ++i)
     {
@@ -210,11 +214,38 @@ void CompEngine::processStereo(const float* inL, const float* inR,
             r = chainR.cell.process(pr, g, bleed * pl, hs);
         }
 
+        // --- detector, keyed from the sidechain input -----------------------
+        //
+        // Open loop: the key never passes through the cell, so the gain cannot
+        // pull it back down and the 4:1 has to be asked for directly - the
+        // closed loop's steady state, gr = beta / (1 + beta) * over. The key
+        // goes through INPUT, so INPUT still sets how hard the unit works
+        // against its fixed threshold, as it does on Main.
+        if (keyed)
+        {
+            float rect = 0.0f;
+            if (keyL)
+                rect = inGain * std::max(std::fabs(keyL[i]), std::fabs(keyR[i]));
+
+            float request = 0.0f;
+            if (rect > 1e-7f)
+            {
+                const float over = 20.0f * std::log10(rect) - kThresholdDb;
+                if (over > 0.0f)
+                    request = kBeta / (1.0f + kBeta) * over;
+            }
+
+            const float cv = sidechain.processOpen(request, 1.0f + kBeta);
+            lastGain = FETGainCell::gainFor(cv);
+            if (cv > grPeak)
+                grPeak = cv;
+        }
         // --- detector, tapped from the cell's output ------------------------
         //
         // Peak, not RMS: the original's detector is a rectifier. Linked across
         // the pair, so a loud left channel pulls the right one down with it and
         // the image stays put.
+        else
         {
             const float rect = std::max(std::fabs(l), std::fabs(r));
 

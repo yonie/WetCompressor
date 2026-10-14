@@ -125,6 +125,13 @@ tresult PLUGIN_API WetCompController::initialize(FUnknown* context)
     parameters.addParameter(new ModeParameter(
         reinterpret_cast<const Vst::TChar*>(u"Mode"), kModeParam));
 
+    auto* detector = new Vst::StringListParameter(
+        STR16("Detector"), kDetectorParam, nullptr,
+        Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList);
+    detector->appendString(STR16("Main"));
+    detector->appendString(STR16("Sidechain"));
+    parameters.addParameter(detector);
+
     // Meter feeds. Read-only so a host never tries to automate them.
     parameters.addParameter(STR16("Input Meter L"), nullptr, 0, 0,
                             Vst::ParameterInfo::kIsReadOnly, kInputMeterL);
@@ -186,6 +193,10 @@ tresult PLUGIN_API WetCompController::setComponentState(IBStream* state)
     restoreKnob(kInputParam);
     restoreKnob(kOutputParam);
     restorePlain(kModeParam, CompRange::kModeCount);
+    if (version >= 3)
+        restorePlain(kDetectorParam, CompRange::kDetectorCount);
+    else
+        setParamNormalized(kDetectorParam, 0.0);
 
     return kResultOk;
 }
@@ -203,6 +214,30 @@ IPlugView* PLUGIN_API WetCompController::createView(FIDString name)
         // Opens at 75%: at 100% the panels are large on most screens. The zoom is not
         // saved, so every window opens here and nothing stored depends on it.
         editor->setZoomFactor(0.75);
+
+        // The detector source, as two entries under the zoom steps: no panel
+        // control, because the unit it models has none.
+        editor->extraEntries = [this](VSTGUI::COptionMenu* menu) {
+            menu->addSeparator();
+            const int current =
+                getParamNormalized(kDetectorParam) >= 0.5 ? CompRange::kDetectSidechain
+                                                          : CompRange::kDetectMain;
+            static const char* titles[] = { "Detector: Main", "Detector: Sidechain" };
+            for (int i = 0; i < CompRange::kDetectorCount; ++i)
+            {
+                auto* item = new VSTGUI::CCommandMenuItem({titles[i]});
+                item->setActions([this, i](VSTGUI::CCommandMenuItem*) {
+                    const Vst::ParamValue v = static_cast<double>(i);
+                    beginEdit(kDetectorParam);
+                    setParamNormalized(kDetectorParam, v);
+                    performEdit(kDetectorParam, v);
+                    endEdit(kDetectorParam);
+                });
+                if (i == current)
+                    item->setChecked(true);
+                menu->addEntry(item);
+            }
+        };
         return editor;
     }
     return nullptr;

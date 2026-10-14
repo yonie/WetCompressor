@@ -103,6 +103,11 @@ inline double stepDb(int step)
 // same reasoning as WetDelay's six fixed delay times.
 enum Mode { kFast = 0, kNormal = 1, kSlow = 2, kModeCount = 3 };
 
+// What the detector listens to. Main is the unit as built; Sidechain keys it
+// from the plug-in's second input, so the source can be filtered or swapped
+// outside the plug-in.
+enum Detector { kDetectMain = 0, kDetectSidechain = 1, kDetectorCount = 2 };
+
 
 // Saved state carries step INDICES, so changing kSteps moves every stored
 // session unless the grid it was written on is known. WetEQ shipped that bug
@@ -145,10 +150,12 @@ public:
         int input  = CompRange::kCentreStep;    // 0 dB
         int output = CompRange::kCentreStep;    // 0 dB
         int mode   = CompRange::kNormal;
+        int detector = CompRange::kDetectMain;
 
         bool operator==(const Settings& o) const
         {
-            return input == o.input && output == o.output && mode == o.mode;
+            return input == o.input && output == o.output && mode == o.mode &&
+                   detector == o.detector;
         }
         bool operator!=(const Settings& o) const { return !(*this == o); }
     };
@@ -159,8 +166,12 @@ public:
     void setSettings(const Settings& s);
     const Settings& settings() const { return current; }
 
+    // keyL/keyR: the sidechain input, read only when the detector is set to
+    // Sidechain. Null there means nothing is connected, which is silence: the
+    // unit then does not compress at all.
     void processStereo(const float* inL, const float* inR,
-                       float* outL, float* outR, int numSamples);
+                       float* outL, float* outR, int numSamples,
+                       const float* keyL = nullptr, const float* keyR = nullptr);
 
     // Peak gain reduction over the block just processed, in dB (positive means
     // reducing). The GR meter reads this.

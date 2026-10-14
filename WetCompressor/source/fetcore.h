@@ -273,6 +273,22 @@ public:
         return fast * (1.0f - w) + slow * w;
     }
 
+    // The same network keyed open-loop, from a source the cell does not touch.
+    // Closed and above threshold, the loop moves at a(1 + beta) per sample (see
+    // kMaxAttackCoeff); open, nothing speeds it up, so the attack carries that
+    // factor itself. Release is not sped up: once the signal falls under the
+    // threshold the loop asks for nothing and the network decays on its own,
+    // closed or open. So FAST, NORMAL and SLOW keep the times they have on Main.
+    inline float processOpen(float rect, float loopGain)
+    {
+        const float atk = std::min(1.0f, aAtk * loopGain);
+        fast += (rect > fast ? (rect - fast) * atk : (rect - fast) * aRelFast);
+        slow += (rect > slow ? (rect - slow) * atk : (rect - slow) * aRelSlow);
+
+        const float w = static_cast<float>(times.slowWeight);
+        return fast * (1.0f - w) + slow * w;
+    }
+
     float attackCoeff() const { return aAtk; }
     const Times& currentTimes() const { return times; }
 
