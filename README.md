@@ -19,7 +19,7 @@ Easy to use FET compressor with high resolution metering. Get to a great sound i
 - Quickly set levels using the stepped INPUT and OUTPUT, 21 positions each, fixed threshold and ratio
 - Classic sound: pushing the unit makes the sound slightly overdriven for a more authorative sound
 - Closely monitor the unit operation using the real-time gain reduction and I/O LED metering
-- Now also with external side chain input
+- Now also with external side chain input (selectable by right clicking the main panel)
 - Resizable panel: right-click and zoom from 50% to 125%
 - INPUT drives the signal past a fixed threshold, OUTPUT puts back what that cost
 - Full parameter automation in every major DAW
@@ -77,6 +77,15 @@ xattr -cr ~/Library/Audio/Plug-Ins/Components/WetCompressor.component
 3. **Pick a timing** with FAST, NORMAL or SLOW
 4. **Bring OUTPUT up** to make up what the compression took
 5. **Automate** any of the three for creative effects
+
+### Sidechain input
+
+You can now have the compressor "duck" on a kick drum for instance. Right-click the plug-in window and select "Detector: Sidechain" to set it up.
+
+- Send the signal the compressor should listen to into the plug-in's input 3/4 (mono on 3 works too)
+- **Detector: Main** (default) listens to input 1/2, as before
+- With nothing on 3/4 and Detector set to Sidechain, there is no compression
+- The choice is saved with your project
 
 ### Parameter Reference
 
