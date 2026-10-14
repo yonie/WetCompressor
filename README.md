@@ -19,6 +19,7 @@ Easy to use FET compressor with high resolution metering. Get to a great sound i
 - Quickly set levels using the stepped INPUT and OUTPUT, 21 positions each, fixed threshold and ratio
 - Classic sound: pushing the unit makes the sound slightly overdriven for a more authorative sound
 - Closely monitor the unit operation using the real-time gain reduction and I/O LED metering
+- Now also with external side chain input
 - Resizable panel: right-click and zoom from 50% to 125%
 - INPUT drives the signal past a fixed threshold, OUTPUT puts back what that cost
 - Full parameter automation in every major DAW
@@ -84,6 +85,7 @@ xattr -cr ~/Library/Audio/Plug-Ins/Components/WetCompressor.component
 | Input | 21 detents of 3 dB, +/-30 dB (1 dB with Shift) | 0 dB, centre detent | Drive into the gain cell. More input is more compression |
 | Output | 21 detents of 3 dB, +/-30 dB (1 dB with Shift) | 0 dB, centre detent | Makeup gain after the output stage |
 | Mode | 0-2 | 1 (NORMAL) | 0=FAST, 1=NORMAL, 2=SLOW |
+| Detector | 0-1 | 0 (Main) | 0=Main (input 1/2), 1=Sidechain (input 3/4). Right-click menu |
 
 ### Timings
 
@@ -102,7 +104,7 @@ most compressors at their fastest.
 - **Wheel**: one detent per notch, or 1 dB with Shift held
 - **Shift-drag**: fine adjust, three steps inside every detent
 - **Ctrl-click** or **double-click**: back to 0 dB
-- **Right-click the panel**: UI Zoom, from 50% to 125%
+- **Right-click the panel**: UI Zoom, from 50% to 125%, and Detector: Main or Sidechain
 
 ![Specification](docs/curves.png)
 
