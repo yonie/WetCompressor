@@ -250,22 +250,21 @@ jobs:
           # The Installation block below is REQUIRED and stays: people land on the
           # release page from an aggregator with no idea what to do with a .vst3.
           body: |
-            **WetCompressor 1.1.1**
+            **WetCompressor 1.2.0**
 
             Product page: https://wetvst.com/wetcompressor/
 
             What's new:
 
-            - Linux: no more crash when the editor opens in Carla, or in any host that hands its event loop over through the plug-in window.
-            - Linux: the FAST, NORMAL and SLOW buttons work in Ardour and other hosts when the system writes decimals with a comma (German, Dutch, French and many more).
-            - UI Zoom now sits directly in the right-click menu, so it also shows in hosts that leave out a plug-in's submenus (Studio One).
-            - The window no longer shows resize arrows it could not act on; UI Zoom changes the size.
-
-            The sound stays the same, and saved projects reload with the same settings.
+            - I have added external sidechain input to WetCompressor, meaning you can now have the compressor "duck" on a kick drum for instance. Right-click the plug-in window and select "Detector: Sidechain" to set it up.
+            - added 50% zoom percentage for even smaller plugin GUI (so you can fit more plugins on your screen)
+            - plugins now open on 75% scale by default, right click a panel to change it's size any time
+            - fixed metering display across the line of plugins. 1 red LED for OVR
+            - fixed WetCompressor IN metering to properly take the INPUT gain into account
 
             ### Resizing the panel
 
-            Right-click anywhere on the panel and pick **UI Zoom** - 75%, 100% or 125%.
+            Right-click anywhere on the panel and pick **UI Zoom** - 50%, 75%, 100% or 125%.
 
             ### Installation
 
