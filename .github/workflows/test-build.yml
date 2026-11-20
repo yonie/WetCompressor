@@ -55,7 +55,7 @@ jobs:
           WetCompressor/build/bin/Release/validator WetCompressor/build/VST3/Release/WetCompressor.vst3
 
   build-macos:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
